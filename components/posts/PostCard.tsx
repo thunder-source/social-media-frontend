@@ -18,6 +18,9 @@ import { Input } from '@/components/ui/input';
 import VideoPlayer from './VideoPlayer';
 import { useAppDispatch } from '@/store/hooks';
 import { likePost } from '@/store/slices/postsSlice';
+import { useFriends } from '@/hooks/useFriends';
+import { useRouter } from 'next/navigation';
+import { UserPlus, MessageSquare } from 'lucide-react';
 
 interface PostCardProps {
   post: Post;
@@ -25,8 +28,24 @@ interface PostCardProps {
 
 export default function PostCard({ post }: PostCardProps) {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { checkFriendshipStatus, sendFriendRequest } = useFriends();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
+
+  const friendshipStatus = checkFriendshipStatus(post.user.id);
+
+  const handleChatOrConnect = async () => {
+    if (friendshipStatus === 'FRIENDS') {
+      router.push(`/chat?userId=${post.user.id}`);
+    } else if (friendshipStatus === 'NONE') {
+      try {
+        await sendFriendRequest(post.user.id, post.id);
+      } catch (error) {
+        // Error handled in hook
+      }
+    }
+  };
 
   const handleLike = () => {
     dispatch(likePost(post.id));
@@ -120,6 +139,22 @@ export default function PostCard({ post }: PostCardProps) {
             <Button variant="ghost" size="sm" className="gap-2 px-2 text-muted-foreground">
               <Share2 className="h-5 w-5" />
             </Button>
+            
+            {post.user.id !== 'user-1' && ( // Don't show for own posts
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2 px-2 text-muted-foreground"
+                onClick={handleChatOrConnect}
+                disabled={friendshipStatus === 'PENDING'}
+              >
+                {friendshipStatus === 'FRIENDS' ? (
+                  <MessageSquare className="h-5 w-5" />
+                ) : (
+                  <UserPlus className={`h-5 w-5 ${friendshipStatus === 'PENDING' ? 'opacity-50' : ''}`} />
+                )}
+              </Button>
+            )}
           </div>
         </div>
 

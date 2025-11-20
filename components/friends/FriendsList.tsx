@@ -1,36 +1,102 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+'use client';
 
-export default function FriendsList() {
-  const friends = [
-    { name: "Alice Wonderland", status: "Online" },
-    { name: "Bob Builder", status: "Offline" },
-    { name: "Charlie Chaplin", status: "Online" },
-  ];
+import { useState } from 'react';
+import { User } from '@/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { MessageCircle, UserMinus, Search, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
+
+interface FriendsListProps {
+  friends: User[];
+  onUnfriend: (id: string) => void;
+}
+
+export default function FriendsList({ friends, onUnfriend }: FriendsListProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredFriends = friends.filter((friend) =>
+    friend.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Friends</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-6">
-        {friends.map((friend, index) => (
-          <div key={index} className="flex items-center justify-between space-x-4">
-            <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage src="/placeholder-user.jpg" />
-                <AvatarFallback>{friend.name[0]}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium leading-none">{friend.name}</p>
-                <p className="text-sm text-muted-foreground">{friend.status}</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm">Message</Button>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search friends..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 bg-background/50"
+        />
+      </div>
+
+      {filteredFriends.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          {searchQuery ? 'No friends found matching your search.' : 'No friends yet.'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredFriends.map((friend) => (
+            <Card key={friend.id} className="overflow-hidden border-none shadow-sm bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={friend.image} alt={friend.name} />
+                    <AvatarFallback>{friend.name[0]}</AvatarFallback>
+                  </Avatar>
+                  {/* Online status indicator (mocked for now, can be real-time later) */}
+                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-sm truncate">{friend.name}</h4>
+                  <p className="text-xs text-muted-foreground truncate">{friend.email}</p>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <Button
+                    asChild
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    title="Message"
+                  >
+                    <Link href={`/chat?userId=${friend.id}`}>
+                      <MessageCircle className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => onUnfriend(friend.id)}
+                      >
+                        <UserMinus className="h-4 w-4 mr-2" />
+                        Unfriend
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

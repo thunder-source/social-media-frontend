@@ -36,3 +36,15 @@ export interface Post {
     comments: number;
   };
 }
+
+export type FriendshipStatus = 'NONE' | 'PENDING' | 'FRIENDS';
+
+export interface FriendRequest {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: string;
+  sender: User;
+  triggeredFromPostId?: string;
+}
