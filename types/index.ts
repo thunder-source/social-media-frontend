@@ -48,3 +48,29 @@ export interface FriendRequest {
   sender: User;
   triggeredFromPostId?: string;
 }
+
+// Socket.io Types
+export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+export interface SocketEvents {
+  // User presence events
+  'user:online': (userId: string) => void;
+  'user:offline': (userId: string) => void;
+  'users:online': (userIds: string[]) => void;
+  
+  // Friend request events
+  'friend:request': (request: FriendRequest) => void;
+  'friend:accepted': (friendId: string) => void;
+  'friend:removed': (friendId: string) => void;
+  
+  // Message events (for future chat implementation)
+  'message:new': (message: any) => void;
+  'message:typing': (userId: string) => void;
+}
+
+export interface SocketState {
+  connected: boolean;
+  connectionState: ConnectionState;
+  error: string | null;
+  reconnectAttempt: number;
+}

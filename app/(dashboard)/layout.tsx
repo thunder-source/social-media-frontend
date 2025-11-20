@@ -1,13 +1,18 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Home, MessageCircle, Users, Bell, Settings, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useSocket } from "@/hooks/useSocket";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Initialize socket connection
+  useSocket();
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row">
       <aside className="hidden w-64 flex-col border-r bg-background md:flex">

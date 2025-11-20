@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageCircle, UserMinus, Search, MoreVertical } from 'lucide-react';
+import { OnlineStatus } from './OnlineStatus';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,18 +49,14 @@ export default function FriendsList({ friends, onUnfriend }: FriendsListProps) {
           {filteredFriends.map((friend) => (
             <Card key={friend.id} className="overflow-hidden border-none shadow-sm bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-colors">
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="relative">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={friend.image} alt={friend.name} />
-                    <AvatarFallback>{friend.name[0]}</AvatarFallback>
-                  </Avatar>
-                  {/* Online status indicator (mocked for now, can be real-time later) */}
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
-                </div>
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={friend.image} alt={friend.name} />
+                  <AvatarFallback>{friend.name[0]}</AvatarFallback>
+                </Avatar>
 
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm truncate">{friend.name}</h4>
-                  <p className="text-xs text-muted-foreground truncate">{friend.email}</p>
+                  <OnlineStatus userId={friend.id} />
                 </div>
 
                 <div className="flex items-center gap-1">
