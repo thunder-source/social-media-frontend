@@ -1,32 +1,38 @@
-import CreatePost from "@/components/posts/CreatePost";
-import PostCard from "@/components/posts/PostCard";
+'use client';
+
+import { useEffect } from 'react';
+import { useInView } from 'react-intersection-observer';
+import { Loader2 } from 'lucide-react';
+import CreatePost from '@/components/posts/CreatePost';
+import PostCard from '@/components/posts/PostCard';
+import { usePosts } from '@/hooks/usePosts';
 
 export default function FeedPage() {
+  const { posts, loading, hasMore, loadMore } = usePosts();
+  const { ref, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasMore && !loading) {
+      loadMore();
+    }
+  }, [inView, hasMore, loading, loadMore]);
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="max-w-2xl mx-auto py-8 px-4">
       <CreatePost />
-      <div className="flex flex-col gap-4">
-        <PostCard
-          username="John Doe"
-          content="This is a sample post content. It's a beautiful day!"
-          timestamp="2 hours ago"
-          likes={12}
-          comments={4}
-        />
-        <PostCard
-          username="Jane Smith"
-          content="Just checking out this new social app. Looks cool!"
-          timestamp="5 hours ago"
-          likes={24}
-          comments={8}
-        />
-        <PostCard
-          username="Bob Johnson"
-          content="Anyone up for a game tonight?"
-          timestamp="1 day ago"
-          likes={5}
-          comments={1}
-        />
+      
+      <div className="space-y-6">
+        {posts.map((post) => (
+          <PostCard key={post.id} post={post} />
+        ))}
+      </div>
+
+      {/* Loading Sentinel */}
+      <div ref={ref} className="flex justify-center py-8">
+        {loading && <Loader2 className="w-8 h-8 animate-spin text-primary" />}
+        {!hasMore && posts.length > 0 && (
+          <p className="text-muted-foreground text-sm">No more posts to load</p>
+        )}
       </div>
     </div>
   );
