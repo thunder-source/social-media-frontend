@@ -7,7 +7,7 @@ import {
   socket, 
   connectSocket, 
   disconnectSocket, 
-  getConnectionState, 
+  getConnectionState,
   getConnectionError,
   getReconnectAttempt 
 } from "@/lib/socket";
@@ -28,8 +28,7 @@ export const useSocket = () => {
       // Use user ID for socket connection
       // Note: Your socket server might expect a JWT token instead
       // If so, you'll need to get the token from cookies or store it in Redux
-      connectSocket(user.id);
-
+      connectSocket();
         // Update connection state on connect
         const handleConnect = () => {
           setConnectionState('connected');

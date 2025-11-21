@@ -7,21 +7,21 @@ let connectionError: string | null = null;
 let reconnectAttempt: number = 0;
 
 // Create socket instance with configuration
-export const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001", {
+export const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
   timeout: 10000,
+  withCredentials: true,
 });
 
 // Helper function to connect socket with JWT token
-export const connectSocket = (token: string) => {
+export const connectSocket = () => {
   if (!socket.connected) {
     connectionState = 'connecting';
     connectionError = null;
-    socket.auth = { token };
     socket.connect();
   }
 };

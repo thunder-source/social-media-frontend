@@ -36,12 +36,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Initialize socket connection
     // Assuming the socket server is running on the same URL or configured via env
+
     const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000', {
       path: '/socket.io',
       addTrailingSlash: false,
-      auth: {
-        token: user.id, // Or use a proper JWT token if available from cookies
-      },
+      withCredentials: true, // Important for HttpOnly cookies
     });
 
     socketInstance.on('connect', () => {
