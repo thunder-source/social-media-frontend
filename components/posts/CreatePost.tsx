@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useInView } from 'react-intersection-observer';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Image from 'next/image';
@@ -193,58 +194,61 @@ export default function CreatePost() {
       </div>
 
       {/* Draggable Floating Action Button */}
-      <AnimatePresence>
-        {!inView && (
-          <motion.div
-            drag
-            dragConstraints={{
-              top: 0,
-              bottom: 0,
-              left: 0,
-              right: 0,
-            }}
-            dragElastic={1}
-            dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
-            onDragEnd={handleDragEnd}
-            initial={{ scale: 0, opacity: 0, y: 20 }}
-            animate={{
-              scale: 1,
-              opacity: 1,
-              y: 0,
-              x: fabPosition === 'right' ? 0 : 0,
-              left: fabPosition === 'left' ? '1.5rem' : 'auto',
-              right: fabPosition === 'right' ? '1.5rem' : 'auto',
-            }}
-            exit={{ scale: 0, opacity: 0, y: 20 }}
-            transition={{
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-            }}
-            className="fixed bottom-6 z-50 cursor-grab active:cursor-grabbing select-none"
-            style={{
-              touchAction: 'none',
-            }}
-          >
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsOpen(true);
+      {typeof window !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {!inView && (
+            <motion.div
+              drag
+              dragConstraints={{
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
               }}
-              size="lg"
-              className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 group pointer-events-auto"
+              dragElastic={1}
+              dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
+              onDragEnd={handleDragEnd}
+              initial={{ scale: 0, opacity: 0, y: 20 }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                y: 0,
+                x: fabPosition === 'right' ? 0 : 0,
+                left: fabPosition === 'left' ? '1.5rem' : 'auto',
+                right: fabPosition === 'right' ? '1.5rem' : 'auto',
+              }}
+              exit={{ scale: 0, opacity: 0, y: 20 }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+              }}
+              className="fixed bottom-6 z-50 cursor-grab active:cursor-grabbing select-none"
+              style={{
+                touchAction: 'none',
+              }}
             >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(true);
+                }}
+                size="lg"
+                className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 group pointer-events-auto"
               >
-                <PenSquare className="h-6 w-6 group-hover:scale-110 transition-transform" />
-              </motion.div>
-              <span className="sr-only">Create Post</span>
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <PenSquare className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                </motion.div>
+                <span className="sr-only">Create Post</span>
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }
