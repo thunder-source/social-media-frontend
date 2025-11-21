@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { User, FriendRequest, FriendshipStatus } from '@/types';
-import { useSession } from 'next-auth/react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { toast } from 'sonner';
 
 export const useFriends = () => {
-  const { data: session } = useSession();
+  const { user } = useSelector((state: RootState) => state.auth);
   const { socket } = useSocket();
   const [friends, setFriends] = useState<User[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
@@ -103,11 +104,11 @@ export const useFriends = () => {
   }, [friends]);
 
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       setIsLoading(true);
       Promise.all([fetchFriends(), fetchPendingRequests()]).finally(() => setIsLoading(false));
     }
-  }, [session, fetchFriends, fetchPendingRequests]);
+  }, [user, fetchFriends, fetchPendingRequests]);
 
   useEffect(() => {
     if (!socket) return;

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import { 
   socket, 
   connectSocket, 
@@ -15,7 +16,7 @@ import { setUserOnline, setUserOffline, setOnlineUsers } from "@/store/slices/au
 import type { ConnectionState } from "@/types";
 
 export const useSocket = () => {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const dispatch = useAppDispatch();
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [error, setError] = useState<string | null>(null);
@@ -23,11 +24,11 @@ export const useSocket = () => {
 
   useEffect(() => {
     // Connect socket when user is authenticated
-    if (status === "authenticated" && session?.user) {
-      const token = (session as any).accessToken; // Assuming accessToken is in session
-      
-      if (token) {
-        connectSocket(token);
+    if (isAuthenticated && user?.id) {
+      // Use user ID for socket connection
+      // Note: Your socket server might expect a JWT token instead
+      // If so, you'll need to get the token from cookies or store it in Redux
+      connectSocket(user.id);
 
         // Update connection state on connect
         const handleConnect = () => {
@@ -84,8 +85,7 @@ export const useSocket = () => {
         // Set initial state
         setConnectionState(getConnectionState());
       }
-    }
-
+    
     // Cleanup on unmount or logout
     return () => {
       // Remove all event listeners
@@ -98,11 +98,11 @@ export const useSocket = () => {
       socket.off("users:online");
 
       // Disconnect if user is not authenticated
-      if (status !== "authenticated") {
+      if (!isAuthenticated) {
         disconnectSocket();
       }
     };
-  }, [status, session, dispatch]);
+  }, [isAuthenticated, user, dispatch]);
 
   return {
     socket,

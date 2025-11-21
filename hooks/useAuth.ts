@@ -1,23 +1,54 @@
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/store";
+import { setUser, clearUser, setAuthLoading } from "@/store/slices/authSlice";
+import { logout as logoutApi, checkAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 export const useAuth = () => {
-  const { data: session, status } = useSession();
+  const dispatch = useDispatch();
   const router = useRouter();
-
-  const login = async () => {
-    await signIn("google");
+  
+  const { user, isAuthenticated, isLoading } = useSelector(
+    (state: RootState) => state.auth
+  );
+  // Check authentication status on mount
+  const checkAuthStatus = async () => {
+    if (isAuthenticated) return; // Already authenticated
+    
+    try {
+      dispatch(setAuthLoading(true));
+      const user = await checkAuth();
+      
+      if (user) {
+        dispatch(setUser(user));
+      } else {
+        dispatch(setAuthLoading(false));
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      dispatch(setAuthLoading(false));
+    }
   };
 
   const logout = async () => {
-    await signOut({ callbackUrl: "/login" });
+    try {
+      await logoutApi();
+      dispatch(clearUser());
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Clear state anyway
+      dispatch(clearUser());
+      router.push("/login");
+    }
   };
 
   return {
-    user: session?.user,
-    isAuthenticated: status === "authenticated",
-    isLoading: status === "loading",
-    login,
+    user,
+    isAuthenticated,
+    isLoading,
+    checkAuthStatus,
     logout,
   };
 };
+

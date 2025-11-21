@@ -5,14 +5,38 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Home, MessageCircle, Users, Bell, Settings, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useSocket } from "@/hooks/useSocket";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
   // Initialize socket connection
   useSocket();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
   return (
     <div className="flex min-h-screen w-full flex-col md:flex-row">
       <aside className="hidden w-64 flex-col border-r bg-background md:flex">
@@ -51,10 +75,10 @@ export default function DashboardLayout({
           </nav>
         </div>
         <div className="mt-auto p-4">
-            <Button variant="ghost" className="w-full justify-start gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
-            </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2">
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </aside>
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">

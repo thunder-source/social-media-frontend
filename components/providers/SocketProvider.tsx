@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useSession } from 'next-auth/react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -19,12 +20,12 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const { data: session } = useSession();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (!session?.user) {
+    if (!user) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -35,11 +36,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Initialize socket connection
     // Assuming the socket server is running on the same URL or configured via env
-    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
-      path: '/api/socket/io',
+    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000', {
+      path: '/socket.io',
       addTrailingSlash: false,
       auth: {
-        token: session.user.email, // Or use a proper token if available
+        token: user.id, // Or use a proper JWT token if available from cookies
       },
     });
 
@@ -58,7 +59,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       socketInstance.disconnect();
     };
-  }, [session]);
+  }, [user]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
