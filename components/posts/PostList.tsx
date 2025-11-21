@@ -7,6 +7,7 @@ import PostCard from "./PostCard";
 import { Post } from "@/types";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import SectionErrorBoundary from "@/components/providers/SectionErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileImage } from "lucide-react";
 
@@ -70,16 +71,20 @@ export default function PostList({
     return (
         <div className="space-y-6">
             {posts.map((post) => (
-                <PostCard
+                <SectionErrorBoundary
                     key={post.id}
-                    post={post}
-                    onLike={onLike}
-                    onComment={onComment}
-                    onUpdate={onUpdate}
-                    onDelete={onDelete}
-                    activeVideoId={activeVideoId}
-                    onPlayVideo={onPlayVideo}
-                />
+                    fallbackMessage="Failed to load this post"
+                >
+                    <PostCard
+                        post={post}
+                        onLike={onLike}
+                        onComment={onComment}
+                        onUpdate={onUpdate}
+                        onDelete={onDelete}
+                        activeVideoId={activeVideoId}
+                        onPlayVideo={onPlayVideo}
+                    />
+                </SectionErrorBoundary>
             ))}
 
             <div ref={ref} className="flex flex-col items-center justify-center py-8 gap-4">

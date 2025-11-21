@@ -5,6 +5,7 @@ import StoreProvider from "@/components/providers/StoreProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
 import { Toaster } from "@/components/ui/sonner";
+import ErrorBoundary from "@/components/providers/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,19 +32,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <StoreProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <SocketProvider>
-              {children}
-              <Toaster />
-            </SocketProvider>
-          </ThemeProvider>
-        </StoreProvider>
+        <ErrorBoundary>
+          <StoreProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <SocketProvider>
+                {children}
+                <Toaster />
+              </SocketProvider>
+            </ThemeProvider>
+          </StoreProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
