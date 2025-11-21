@@ -3,6 +3,7 @@ import { RootState } from "@/store";
 import { clearUser } from "@/store/slices/authSlice";
 import { apiSlice, useGetCurrentUserQuery } from "@/store/api/apiSlice";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -29,11 +30,13 @@ export const useAuth = () => {
       await triggerLogout().unwrap();
       dispatch(clearUser());
       router.push("/");
-    } catch (error) {
+      toast.success("Logged out successfully");
+    } catch (error: any) {
       console.error("Logout failed:", error);
       // Clear state anyway
       dispatch(clearUser());
       router.push("/");
+      toast.error(error?.data?.message || "Logout failed");
     }
   };
 

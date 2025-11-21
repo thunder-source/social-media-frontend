@@ -14,6 +14,7 @@ import {
 import { useAppDispatch } from "@/store/hooks";
 import { setUserOnline, setUserOffline, setOnlineUsers } from "@/store/slices/authSlice";
 import type { ConnectionState } from "@/types";
+import { toast } from "sonner";
 
 export const useSocket = () => {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -34,24 +35,28 @@ export const useSocket = () => {
           setConnectionState('connected');
           setError(null);
           setReconnectAttempt(0);
+          // toast.success("Connected to server"); // Optional: might be too noisy
         };
 
         // Update connection state on disconnect
         const handleDisconnect = () => {
           setConnectionState('disconnected');
           setError(getConnectionError());
+          toast.error("Disconnected from server");
         };
 
         // Update connection state on error
         const handleError = () => {
           setConnectionState('error');
           setError(getConnectionError());
+          toast.error("Connection error");
         };
 
         // Update reconnect attempt
         const handleReconnectAttempt = () => {
           setConnectionState('connecting');
           setReconnectAttempt(getReconnectAttempt());
+          toast.loading("Reconnecting...", { duration: 2000 });
         };
 
         // Listen for user:online event

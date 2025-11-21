@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { socket } from "@/lib/socket";
 import type { Message, Chat } from "@/types";
+import { toast } from "sonner";
 
 interface UseChatReturn {
   messages: Message[];
@@ -105,13 +106,23 @@ export const useChat = (): UseChatReturn => {
     (content: string, chatId: string) => {
       if (!content.trim() || !user?.id) return;
 
+      if (!socket.connected) {
+        toast.error("Connection lost. Cannot send message.");
+        return;
+      }
+
       const messageData = {
         chatId,
         content: content.trim(),
         senderId: user.id,
       };
 
-      socket.emit("message:new", messageData);
+      try {
+        socket.emit("message:new", messageData);
+      } catch (error) {
+        console.error("Failed to send message:", error);
+        toast.error("Failed to send message");
+      }
     },
     [user?.id]
   );

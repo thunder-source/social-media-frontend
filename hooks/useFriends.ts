@@ -50,9 +50,9 @@ export const useFriends = () => {
         triggeredFromPostId,
       }).unwrap();
       toast.success('Friend request sent!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send friend request:', error);
-      toast.error('Failed to send friend request');
+      toast.error(error?.data?.message || 'Failed to send friend request');
       throw error;
     }
   };
@@ -61,9 +61,9 @@ export const useFriends = () => {
     try {
       await acceptFriendRequestMutation(requestId).unwrap();
       toast.success('Friend request accepted!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to accept friend request:', error);
-      toast.error('Failed to accept friend request');
+      toast.error(error?.data?.message || 'Failed to accept friend request');
     }
   };
 
@@ -71,9 +71,9 @@ export const useFriends = () => {
     try {
       await rejectFriendRequestMutation(requestId).unwrap();
       toast.success('Friend request rejected');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to reject friend request:', error);
-      toast.error('Failed to reject friend request');
+      toast.error(error?.data?.message || 'Failed to reject friend request');
     }
   };
 
@@ -81,9 +81,9 @@ export const useFriends = () => {
     try {
       await unfriendMutation(friendId).unwrap();
       toast.success('Unfriended user');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to unfriend:', error);
-      toast.error('Failed to unfriend');
+      toast.error(error?.data?.message || 'Failed to unfriend');
     }
   };
 
