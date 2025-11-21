@@ -10,11 +10,12 @@ let reconnectAttempt: number = 0;
 export const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
   autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 10000,
   withCredentials: true,
+  reconnectionDelay: 5000,        // Increase from default 1000ms to 5000ms
+  reconnectionDelayMax: 10000,    // Increase from default 5000ms to 10000ms
+  timeout: 20000,                  // Increase connection timeout
+  reconnectionAttempts: 5,         // Limit reconnection attempts
+  transports: ['websocket', 'polling'], // Try websocket first
 });
 
 // Helper function to connect socket with JWT token

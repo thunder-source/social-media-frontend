@@ -1,47 +1,55 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useEffect, useCallback } from 'react';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { User, FriendRequest, FriendshipStatus } from '@/types';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { toast } from 'sonner';
+import {
+  useGetFriendsQuery,
+  useGetPendingRequestsQuery,
+  useSendFriendRequestMutation,
+  useAcceptFriendRequestMutation,
+  useRejectFriendRequestMutation,
+  useUnfriendMutation,
+} from '@/store/api/friendsApi';
 
 export const useFriends = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const { socket } = useSocket();
-  const [friends, setFriends] = useState<User[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchFriends = useCallback(async () => {
-    try {
-      const response = await axios.get('/api/friends');
-      setFriends(response.data);
-    } catch (error) {
-      console.error('Failed to fetch friends:', error);
-    }
-  }, []);
+  // RTK Query hooks - only fetch data when user is authenticated
+  const { 
+    data: friends = [], 
+    isLoading: isFriendsLoading,
+    refetch: refetchFriends,
+  } = useGetFriendsQuery(undefined, {
+    skip: !user,
+  });
 
-  const fetchPendingRequests = useCallback(async () => {
-    try {
-      const response = await axios.get('/api/friends/requests');
-      setPendingRequests(response.data);
-    } catch (error) {
-      console.error('Failed to fetch pending requests:', error);
-    }
-  }, []);
+  const { 
+    data: pendingRequests = [], 
+    isLoading: isRequestsLoading,
+    refetch: refetchRequests,
+  } = useGetPendingRequestsQuery(undefined, {
+    skip: !user,
+  });
+
+  const [sendFriendRequestMutation] = useSendFriendRequestMutation();
+  const [acceptFriendRequestMutation] = useAcceptFriendRequestMutation();
+  const [rejectFriendRequestMutation] = useRejectFriendRequestMutation();
+  const [unfriendMutation] = useUnfriendMutation();
+
+  const isLoading = isFriendsLoading || isRequestsLoading;
 
   const sendFriendRequest = async (toUserId: string, triggeredFromPostId?: string) => {
     try {
-      await axios.post('/api/friends/request', {
+      await sendFriendRequestMutation({
         toUserId,
         triggeredFromPostId,
-      });
+      }).unwrap();
       toast.success('Friend request sent!');
-      // Optimistic update or wait for socket? 
-      // Usually wait for socket or just show "Pending" button state locally
     } catch (error) {
       console.error('Failed to send friend request:', error);
       toast.error('Failed to send friend request');
@@ -51,14 +59,8 @@ export const useFriends = () => {
 
   const acceptFriendRequest = async (requestId: string) => {
     try {
-      await axios.post(`/api/friends/accept/${requestId}`);
+      await acceptFriendRequestMutation(requestId).unwrap();
       toast.success('Friend request accepted!');
-      
-      // Optimistic update
-      setPendingRequests((prev) => prev.filter((req) => req.id !== requestId));
-      // We should also add the user to friends list, but we might need the user object
-      // Ideally the API returns the new friend or we re-fetch
-      fetchFriends(); 
     } catch (error) {
       console.error('Failed to accept friend request:', error);
       toast.error('Failed to accept friend request');
@@ -67,9 +69,8 @@ export const useFriends = () => {
 
   const rejectFriendRequest = async (requestId: string) => {
     try {
-      await axios.post(`/api/friends/reject/${requestId}`);
+      await rejectFriendRequestMutation(requestId).unwrap();
       toast.success('Friend request rejected');
-      setPendingRequests((prev) => prev.filter((req) => req.id !== requestId));
     } catch (error) {
       console.error('Failed to reject friend request:', error);
       toast.error('Failed to reject friend request');
@@ -78,9 +79,8 @@ export const useFriends = () => {
 
   const unfriend = async (friendId: string) => {
     try {
-      await axios.delete(`/api/friends/${friendId}`);
+      await unfriendMutation(friendId).unwrap();
       toast.success('Unfriended user');
-      setFriends((prev) => prev.filter((friend) => friend.id !== friendId));
     } catch (error) {
       console.error('Failed to unfriend:', error);
       toast.error('Failed to unfriend');
@@ -88,7 +88,8 @@ export const useFriends = () => {
   };
 
   const checkFriendshipStatus = useCallback((userId: string): FriendshipStatus => {
-    if (friends.some((f) => f.id === userId)) return 'FRIENDS';
+    // Ensure friends is always treated as an array
+    if (Array.isArray(friends) && friends.some((f) => f.id === userId)) return 'FRIENDS';
     // This is tricky because pendingRequests usually contains requests RECEIVED
     // We might need to know if we SENT a request too.
     // For now, we'll assume we only check incoming requests or if the API provides status
@@ -103,28 +104,25 @@ export const useFriends = () => {
     return 'NONE';
   }, [friends]);
 
-  useEffect(() => {
-    if (user) {
-      setIsLoading(true);
-      Promise.all([fetchFriends(), fetchPendingRequests()]).finally(() => setIsLoading(false));
-    }
-  }, [user, fetchFriends, fetchPendingRequests]);
-
+  // Socket event handlers for real-time updates
   useEffect(() => {
     if (!socket) return;
 
     socket.on('friend:request:received', (newRequest: FriendRequest) => {
-      setPendingRequests((prev) => [newRequest, ...prev]);
+      // Refetch pending requests to update the list
+      refetchRequests();
       toast.info(`New friend request from ${newRequest.sender.name}`);
     });
 
     socket.on('friend:request:accepted', (data: { user: User }) => {
-      setFriends((prev) => [...prev, data.user]);
+      // Refetch friends list to include the new friend
+      refetchFriends();
       toast.success(`${data.user.name} accepted your friend request!`);
     });
 
     socket.on('friend:removed', (data: { userId: string }) => {
-      setFriends((prev) => prev.filter((f) => f.id !== data.userId));
+      // Refetch friends list to remove the unfriended user
+      refetchFriends();
     });
 
     return () => {
@@ -132,7 +130,7 @@ export const useFriends = () => {
       socket.off('friend:request:accepted');
       socket.off('friend:removed');
     };
-  }, [socket]);
+  }, [socket, refetchFriends, refetchRequests]);
 
   return {
     friends,
