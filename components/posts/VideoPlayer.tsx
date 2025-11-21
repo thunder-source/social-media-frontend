@@ -34,6 +34,8 @@ export default function VideoPlayer({
   const { ref, inView } = useInView({
     threshold: 0.6, // Play when 60% visible
   });
+  // Track if video was auto-paused due to tab visibility change
+  const wasAutoPausedRef = useRef(false);
 
   // Initialize audio state from localStorage on mount
   useEffect(() => {
@@ -66,17 +68,49 @@ export default function VideoPlayer({
     }
   }, [activeVideoId, videoId]);
 
+  // Handle pausing/resuming when tab visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden - pause video if it's playing
+        if (videoRef.current && !videoRef.current.paused) {
+          videoRef.current.pause();
+          setIsPlaying(false);
+          wasAutoPausedRef.current = true; // Mark as auto-paused
+        }
+      } else {
+        // Tab is visible again - resume video if it was auto-paused
+        if (wasAutoPausedRef.current && videoRef.current) {
+          videoRef.current.play().catch(() => {
+            // Play might fail, just ignore
+            setIsPlaying(false);
+          });
+          setIsPlaying(true);
+          wasAutoPausedRef.current = false; // Reset flag
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const togglePlay = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        wasAutoPausedRef.current = false; // User manually paused, so don't auto-resume
       } else {
         // If we're starting playback, notify parent
         if (videoId && onPlay) {
           onPlay(videoId);
         }
         videoRef.current.play();
+        wasAutoPausedRef.current = false; // User manually played
       }
       setIsPlaying(!isPlaying);
     }
