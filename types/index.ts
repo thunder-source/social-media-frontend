@@ -63,9 +63,11 @@ export interface SocketEvents {
   'friend:accepted': (friendId: string) => void;
   'friend:removed': (friendId: string) => void;
   
-  // Message events (for future chat implementation)
-  'message:new': (message: any) => void;
-  'message:typing': (userId: string) => void;
+  // Message events
+  'message:new': (message: Message) => void;
+  'message:read': (data: { messageId: string; userId: string }) => void;
+  'typing:start': (data: { userId: string; chatId: string }) => void;
+  'typing:stop': (data: { userId: string; chatId: string }) => void;
 }
 
 export interface SocketState {
@@ -73,4 +75,29 @@ export interface SocketState {
   connectionState: ConnectionState;
   error: string | null;
   reconnectAttempt: number;
+}
+
+// Chat Types
+export interface Message {
+  id: string;
+  chatId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  readBy: string[]; // Array of user IDs who read the message
+  sender: User;
+}
+
+export interface Chat {
+  id: string;
+  participants: User[];
+  lastMessage?: Message;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface TypingUser {
+  userId: string;
+  chatId: string;
+  timestamp: number;
 }
