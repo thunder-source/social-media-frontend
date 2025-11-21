@@ -12,6 +12,8 @@ interface CreatePostRequest {
   media: 'image' | 'video' | 'null';
 }
 
+type CreatePostPayload = CreatePostRequest | FormData;
+
 export const postsApi = createApi({
   reducerPath: 'postsApi',
   baseQuery: fetchBaseQuery({
@@ -49,7 +51,7 @@ export const postsApi = createApi({
     }),
 
     // Create a new post
-    createPost: builder.mutation<Post, CreatePostRequest>({
+    createPost: builder.mutation<Post, CreatePostPayload>({
       query: (body) => ({
         url: '/posts',
         method: 'POST',

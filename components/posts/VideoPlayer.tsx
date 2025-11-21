@@ -11,31 +11,62 @@ interface VideoPlayerProps {
   className?: string;
 }
 
-export default function VideoPlayer({ src, poster, className }: VideoPlayerProps) {
+export default function VideoPlayer({
+  src,
+  poster,
+  className,
+  videoId,
+  activeVideoId,
+  onPlay
+}: VideoPlayerProps & {
+  videoId?: string;
+  activeVideoId?: string | null;
+  onPlay?: (id: string) => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const { ref,inView } = useInView({
+  const { ref, inView } = useInView({
     threshold: 0.6, // Play when 60% visible
   });
 
+  // Handle autoplay when in view
   useEffect(() => {
     if (inView) {
+      // If we have coordination props, use them
+      if (videoId && onPlay) {
+        onPlay(videoId);
+      }
+
       videoRef.current?.play().catch(() => {
         // Autoplay might be blocked
         setIsPlaying(false);
       });
     } else {
       videoRef.current?.pause();
+      setIsPlaying(false);
     }
-  }, [inView]);
+  }, [inView, videoId, onPlay]);
 
-  const togglePlay = () => {
+  // Handle pausing when another video becomes active
+  useEffect(() => {
+    if (activeVideoId && videoId && activeVideoId !== videoId) {
+      videoRef.current?.pause();
+      setIsPlaying(false);
+    }
+  }, [activeVideoId, videoId]);
+
+  const togglePlay = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        // If we're starting playback, notify parent
+        if (videoId && onPlay) {
+          onPlay(videoId);
+        }
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
@@ -50,15 +81,15 @@ export default function VideoPlayer({ src, poster, className }: VideoPlayerProps
     }
   };
 
-  const onPlay = () => setIsPlaying(true);
-  const onPause = () => setIsPlaying(false);
+  const onPlayHandler = () => setIsPlaying(true);
+  const onPauseHandler = () => setIsPlaying(false);
   const onWaiting = () => setIsLoading(true);
   const onPlaying = () => setIsLoading(false);
 
   return (
-    <div 
-      ref={ref} 
-      className={cn("relative overflow-hidden rounded-xl bg-black aspect-video group cursor-pointer", className)}
+    <div
+      ref={ref}
+      className={cn("relative overflow-hidden bg-black aspect-video group cursor-pointer", className)}
       onClick={togglePlay}
     >
       <video
@@ -69,8 +100,8 @@ export default function VideoPlayer({ src, poster, className }: VideoPlayerProps
         loop
         muted={isMuted}
         playsInline
-        onPlay={onPlay}
-        onPause={onPause}
+        onPlay={onPlayHandler}
+        onPause={onPauseHandler}
         onWaiting={onWaiting}
         onPlaying={onPlaying}
       />
@@ -88,10 +119,11 @@ export default function VideoPlayer({ src, poster, className }: VideoPlayerProps
         isPlaying && !isLoading ? "opacity-0 group-hover:opacity-100" : "opacity-100"
       )}>
         {!isLoading && (
-          <button 
+          <button
             className="p-3 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+            onClick={togglePlay}
           >
-            {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
+            {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
           </button>
         )}
       </div>

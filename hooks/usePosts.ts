@@ -7,6 +7,7 @@ import {
   useUpdatePostMutation,
   useDeletePostMutation,
 } from '@/store/api/postsApi';
+import { compressFile } from '@/lib/utils';
 
 export const usePosts = () => {
   const [page, setPage] = useState(1);
@@ -36,8 +37,22 @@ export const usePosts = () => {
   }, [isLoading, hasMore]);
 
   const createNewPost = useCallback(
-    async (text: string, media: 'image' | 'video' | 'null') => {
-      await createPostMutation({ text, media }).unwrap();
+    async (text: string, media: 'image' | 'video' | 'null', file?: File) => {
+      if (file) {
+        let fileToUpload: File | Blob = file;
+        try {
+          fileToUpload = await compressFile(file);
+        } catch (error) {
+          console.error('File compression failed:', error);
+        }
+
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('file', fileToUpload);
+        await createPostMutation(formData).unwrap();
+      } else {
+        await createPostMutation({ text, media }).unwrap();
+      }
       // Reset to page 1 to show the new post
       setPage(1);
       refetch();

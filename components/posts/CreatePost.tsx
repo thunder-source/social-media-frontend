@@ -47,7 +47,7 @@ export default function CreatePost() {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !media) return;
+    if (!content.trim()) return;
 
     setIsLoading(true);
     try {
@@ -58,7 +58,7 @@ export default function CreatePost() {
         url: media.preview, // Using preview URL for demo
       } : null;
 
-      await createNewPost(content, media?.type || 'null');
+      await createNewPost(content, media?.type || 'null', media?.file);
 
       setIsOpen(false);
       setContent('');
@@ -172,7 +172,7 @@ export default function CreatePost() {
                 <Button
                   className="w-full"
                   onClick={handleSubmit}
-                  disabled={(!content.trim() && !media) || isLoading}
+                  disabled={!content.trim() || isLoading}
                 >
                   {isLoading ? (
                     <>

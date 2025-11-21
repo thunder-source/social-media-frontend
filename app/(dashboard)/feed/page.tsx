@@ -18,6 +18,9 @@ export default function FeedPage() {
   const touchStartY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Video playback coordination
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
   useEffect(() => {
     if (inView && hasMore && !loading) {
       loadMore();
@@ -120,6 +123,8 @@ export default function FeedPage() {
               onComment={addComment}
               onUpdate={updatePost}
               onDelete={deletePost}
+              activeVideoId={activeVideoId}
+              onPlayVideo={setActiveVideoId}
             />
           ))}
         </div>
