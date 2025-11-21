@@ -16,12 +16,11 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAppDispatch } from '@/store/hooks';
-import { createPost } from '@/store/slices/postsSlice';
+import { usePosts } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function CreatePost() {
-  const dispatch = useAppDispatch();
+  const { createNewPost } = usePosts();
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -53,13 +52,13 @@ export default function CreatePost() {
     setIsLoading(true);
     try {
       // In a real app, upload media first then get URL
-      const attachments = media ? [{
+      const attachments = media ? {
         id: `att-${Date.now()}`,
         type: media.type,
         url: media.preview, // Using preview URL for demo
-      }] : [];
+      } : null;
 
-      await dispatch(createPost({ content, attachments })).unwrap();
+      await createNewPost(content, media?.type || 'null');
 
       setIsOpen(false);
       setContent('');

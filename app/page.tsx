@@ -7,7 +7,7 @@ import { Users, MessageCircle, Share2, Globe, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "./(dashboard)/layout";
-import FeedContent from "@/components/feed/FeedContent";
+import FeedPage from "./(dashboard)/feed/page";
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -23,7 +23,7 @@ export default function Home() {
   if (isAuthenticated) {
     return (
       <DashboardLayout>
-        <FeedContent />
+        <FeedPage />
       </DashboardLayout>
     );
   }

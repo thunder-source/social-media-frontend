@@ -1,8 +1,15 @@
 export interface User {
   id: string;
+  _id?: string;
+  googleId?: string;
   name: string;
   email: string;
-  image?: string;
+  photo?: string; // Backend uses 'photo' not 'image'
+  image?: string; // Keep for backward compatibility
+  friends?: string[];
+  friendsCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Attachment {
@@ -14,23 +21,31 @@ export interface Attachment {
 
 export interface Comment {
   id: string;
+  _id?: string;
   content: string;
-  userId: string;
+  text?: string; // Backend might use 'text'
+  userId: string | User; // Can be populated or just ID
   postId: string;
   createdAt: string;
-  user: User;
+  user?: User; // Optional when populated
 }
 
 export interface Post {
   id: string;
-  content: string;
-  userId: string;
+  _id?: string;
+  content?: string; // Frontend uses 'content'
+  text?: string; // Backend uses 'text'
+  userId: string | User; // Can be populated User object or just ID string
+  user?: User; // Keep for backward compatibility
   createdAt: string;
   updatedAt: string;
-  attachments: Attachment[];
+  attachments?: Attachment[];
+  mediaType?: string | null; // Backend field
+  mediaUrl?: string; // Backend field
   likes: string[]; // Array of user IDs
   comments: Comment[];
-  user: User;
+  likesCount?: number; // Backend uses this
+  commentsCount?: number; // Backend uses this
   _count?: {
     likes: number;
     comments: number;
