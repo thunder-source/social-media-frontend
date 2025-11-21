@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { setUser, setAuthLoading } from "@/store/slices/authSlice";
-import { getCurrentUser } from "@/lib/auth";
+import { apiSlice } from "@/store/api/apiSlice";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
@@ -22,29 +21,25 @@ export default function CallbackPage() {
       if (errorParam) {
         setError("Authentication failed. Please try again.");
         setTimeout(() => {
-          router.push("/login");
+          router.push("/");
         }, 3000);
         return;
       }
 
       try {
-        dispatch(setAuthLoading(true));
-        
-        // Fetch user data from backend /api/auth/me
-        const user = await getCurrentUser();
-        
-        // Store user in Redux
-        dispatch(setUser(user));
-        
+        // Fetch user data from backend /api/auth/me using RTK Query
+        // @ts-ignore
+        await dispatch(apiSlice.endpoints.getCurrentUser.initiate()).unwrap();
+
         // Redirect to feed
-        router.push("/feed");
+        router.push("/");
       } catch (err) {
         console.error("Authentication callback error:", err);
         setError("Failed to authenticate. Please try again.");
-        
+
         // Redirect to login after 3 seconds
         setTimeout(() => {
-          router.push("/login");
+          router.push("/");
         }, 3000);
       }
     };

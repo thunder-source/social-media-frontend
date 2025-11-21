@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+
 import { useAuth } from '@/hooks/useAuth';
 
 export default function AuthProvider({
@@ -8,11 +8,7 @@ export default function AuthProvider({
 }: {
     children: React.ReactNode;
 }) {
-    const { checkAuthStatus } = useAuth();
-
-    useEffect(() => {
-        checkAuthStatus();
-    }, [checkAuthStatus]);
+    useAuth();
 
     return <>{children}</>;
 }

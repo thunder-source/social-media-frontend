@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Chrome, Loader2 } from "lucide-react";
-import { loginWithGoogle } from "@/lib/auth";
 
 export default function GoogleLoginButton() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = () => {
     setIsLoading(true);
-    loginWithGoogle();
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    window.location.href = `${backendUrl}/auth/google`;
   };
 
   return (

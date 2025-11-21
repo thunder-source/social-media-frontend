@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "./(dashboard)/layout";
 import FeedContent from "@/components/feed/FeedContent";
-import { useEffect } from "react";
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
