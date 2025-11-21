@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useInView } from 'react-intersection-observer';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import CreatePost from '@/components/posts/CreatePost';
-import PostCard from '@/components/posts/PostCard';
+import PostList from '@/components/posts/PostList';
 import { usePosts } from '@/hooks/usePosts';
 
 export default function FeedPage() {
   const { posts, loading, hasMore, loadMore, toggleLike, addComment, updatePost, deletePost, refreshPosts } = usePosts();
-  const { ref, inView } = useInView();
 
   // Pull to refresh state
   const [pullDistance, setPullDistance] = useState(0);
@@ -20,12 +18,6 @@ export default function FeedPage() {
 
   // Video playback coordination
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (inView && hasMore && !loading) {
-      loadMore();
-    }
-  }, [inView, hasMore, loading, loadMore]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     // Only start pull if at the top of the page
@@ -114,28 +106,18 @@ export default function FeedPage() {
       >
         <CreatePost />
 
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onLike={toggleLike}
-              onComment={addComment}
-              onUpdate={updatePost}
-              onDelete={deletePost}
-              activeVideoId={activeVideoId}
-              onPlayVideo={setActiveVideoId}
-            />
-          ))}
-        </div>
-
-        {/* Loading Sentinel */}
-        <div ref={ref} className="flex justify-center py-8">
-          {loading && <Loader2 className="w-8 h-8 animate-spin text-primary" />}
-          {!hasMore && posts.length > 0 && (
-            <p className="text-muted-foreground text-sm">No more posts to load</p>
-          )}
-        </div>
+        <PostList
+          posts={posts}
+          loading={loading}
+          hasMore={hasMore}
+          loadMore={loadMore}
+          onLike={toggleLike}
+          onComment={addComment}
+          onUpdate={updatePost}
+          onDelete={deletePost}
+          activeVideoId={activeVideoId}
+          onPlayVideo={setActiveVideoId}
+        />
       </div>
     </div>
   );

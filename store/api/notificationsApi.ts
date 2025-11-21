@@ -12,8 +12,13 @@ export const notificationsApi = createApi({
   tagTypes: ['Notification'],
   endpoints: (builder) => ({
     // Fetch all notifications
-    getNotifications: builder.query<Notification[], void>({
-      query: () => '/notifications',
+    getNotifications: builder.query<Notification[], { unreadOnly?: boolean } | void>({
+      query: (params) => {
+        if (params && params.unreadOnly) {
+          return '/notifications?unreadOnly=true';
+        }
+        return '/notifications';
+      },
       transformResponse: (response: any) => {
         // Backend might return { notifications: [...] } or just [...]
         return response.notifications || response || [];
@@ -31,7 +36,7 @@ export const notificationsApi = createApi({
     markAsRead: builder.mutation<Notification, string>({
       query: (id) => ({
         url: `/notifications/${id}/read`,
-        method: 'PATCH',
+        method: 'PUT',
       }),
       invalidatesTags: (result, error, id) => [{ type: 'Notification', id }],
     }),
@@ -40,7 +45,7 @@ export const notificationsApi = createApi({
     markAllAsRead: builder.mutation<void, void>({
       query: () => ({
         url: '/notifications/read-all',
-        method: 'PATCH',
+        method: 'PUT',
       }),
       invalidatesTags: [{ type: 'Notification', id: 'LIST' }],
     }),
