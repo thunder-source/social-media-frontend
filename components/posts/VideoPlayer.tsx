@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { toggleMuted, initializeAudioState } from '@/store/slices/uiSlice';
 
 interface VideoPlayerProps {
   src: string;
@@ -25,11 +28,17 @@ export default function VideoPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const dispatch = useDispatch();
+  const isMuted = useSelector((state: RootState) => state.ui.isMuted);
   const [isLoading, setIsLoading] = useState(true);
   const { ref, inView } = useInView({
     threshold: 0.6, // Play when 60% visible
   });
+
+  // Initialize audio state from localStorage on mount
+  useEffect(() => {
+    dispatch(initializeAudioState());
+  }, [dispatch]);
 
   // Handle autoplay when in view
   useEffect(() => {
@@ -75,10 +84,7 @@ export default function VideoPlayer({
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
+    dispatch(toggleMuted());
   };
 
   const onPlayHandler = () => setIsPlaying(true);

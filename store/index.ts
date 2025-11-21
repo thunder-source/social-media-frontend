@@ -4,8 +4,11 @@ import { apiSlice } from './api/apiSlice';
 import { friendsApi } from './api/friendsApi';
 import { postsApi } from './api/postsApi';
 
+import uiReducer from './slices/uiSlice';
+
 const rootReducer = combineReducers({
   auth: authReducer,
+  ui: uiReducer,
   [apiSlice.reducerPath]: apiSlice.reducer,
   [friendsApi.reducerPath]: friendsApi.reducer,
   [postsApi.reducerPath]: postsApi.reducer,
