@@ -83,6 +83,10 @@ export interface SocketEvents {
   'message:read': (data: { messageId: string; userId: string }) => void;
   'typing:start': (data: { userId: string; chatId: string }) => void;
   'typing:stop': (data: { userId: string; chatId: string }) => void;
+  
+  // Notification events
+  'notification:new': (notification: Notification) => void;
+  'notification:read': (notificationId: string) => void;
 }
 
 export interface SocketState {
@@ -115,4 +119,31 @@ export interface TypingUser {
   userId: string;
   chatId: string;
   timestamp: number;
+}
+
+// Notification Types
+export type NotificationType = 
+  | 'LIKE' 
+  | 'COMMENT' 
+  | 'FRIEND_REQUEST' 
+  | 'FRIEND_ACCEPTED' 
+  | 'MENTION'
+  | 'POST_SHARE'
+  | 'MESSAGE';
+
+export interface Notification {
+  id: string;
+  _id?: string;
+  type: NotificationType;
+  userId: string; // The user receiving the notification
+  actorId: string; // The user who triggered the notification
+  actor?: User; // Populated actor user
+  postId?: string;
+  post?: Post;
+  commentId?: string;
+  friendRequestId?: string;
+  message?: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
