@@ -12,12 +12,15 @@ export const notificationsApi = createApi({
   tagTypes: ['Notification'],
   endpoints: (builder) => ({
     // Fetch all notifications
-    getNotifications: builder.query<Notification[], { unreadOnly?: boolean } | void>({
+    getNotifications: builder.query<Notification[], { unreadOnly?: boolean; page?: number; limit?: number } | void>({
       query: (params) => {
-        if (params && params.unreadOnly) {
-          return '/notifications?unreadOnly=true';
-        }
-        return '/notifications';
+        const queryParams = new URLSearchParams();
+        if (params?.unreadOnly) queryParams.append('unreadOnly', 'true');
+        if (params?.page) queryParams.append('page', params.page.toString());
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        
+        const queryString = queryParams.toString();
+        return `/notifications${queryString ? `?${queryString}` : ''}`;
       },
       transformResponse: (response: any) => {
         // Backend might return { notifications: [...] } or just [...]
@@ -72,6 +75,7 @@ export const notificationsApi = createApi({
 
 export const {
   useGetNotificationsQuery,
+  useLazyGetNotificationsQuery,
   useMarkAsReadMutation,
   useMarkAllAsReadMutation,
   useDeleteNotificationMutation,

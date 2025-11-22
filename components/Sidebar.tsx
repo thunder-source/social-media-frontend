@@ -11,6 +11,7 @@ import {
     Moon,
     Sun,
     Laptop,
+    Bell,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
@@ -59,6 +60,11 @@ export function AppSidebar() {
             title: "Friends",
             url: "/friends",
             icon: Users,
+        },
+        {
+            title: "Notifications",
+            url: "/notifications",
+            icon: Bell,
         },
     ];
 

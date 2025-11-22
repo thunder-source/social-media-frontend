@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
     Popover,
@@ -149,8 +150,11 @@ export function NotificationBell() {
                                 variant="ghost"
                                 size="sm"
                                 className="w-full text-xs text-muted-foreground hover:text-foreground"
+                                asChild
                             >
-                                View all notifications
+                                <Link href="/notifications">
+                                    View all notifications
+                                </Link>
                             </Button>
                         </div>
                     </>
