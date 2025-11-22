@@ -12,6 +12,7 @@ import { X, Phone, Video, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence } from "framer-motion";
 import type { Chat, Message } from "@/types";
+import { useMarkMessageAsReadMutation } from "@/store/api/chatsApi";
 
 interface ChatWindowProps {
   chat: Chat;
@@ -39,16 +40,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   className,
 }) => {
   const { user, onlineUsers } = useSelector((state: RootState) => state.auth);
+  const [markMessageAsRead] = useMarkMessageAsReadMutation();
 
   // Get the other participant (assuming 1-on-1 chat)
   const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
   const isOnline = otherParticipant ? !!onlineUsers[otherParticipant.id] : false;
 
-  // Mark messages as read when chat window is opened
+  // Mark messages as read when chat window is opened or new messages arrive
   useEffect(() => {
-    // This would typically be handled by the parent component
-    // but we can add additional logic here if needed
-  }, [chat.id]);
+    if (messages && user && chat) {
+      const unreadMessages = messages.filter(
+        (msg) =>
+          msg.chatId === chat.id &&
+          msg.senderId !== user.id &&
+          !msg.readBy.includes(user.id)
+      );
+
+      if (unreadMessages.length > 0) {
+        unreadMessages.forEach((msg) => {
+          markMessageAsRead(msg.id);
+        });
+      }
+    }
+  }, [messages, chat.id, user, markMessageAsRead]);
 
   return (
     <div
@@ -83,29 +97,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               {isOnline ? "Online" : "Offline"}
             </p>
           </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <Video className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-          {isModal && onClose && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
 

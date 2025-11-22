@@ -55,6 +55,8 @@ export const MessageList: React.FC<MessageListProps> = ({
     // Auto-scroll on new messages (only if user hasn't scrolled up)
     useEffect(() => {
         if (shouldAutoScroll && chatMessages.length > 0) {
+            // If it's the very first load or we are already at bottom, scroll instantly or smooth
+            // We can use a ref to track if it's the first mount for this chat
             scrollToBottom();
         }
     }, [chatMessages.length, shouldAutoScroll]);
@@ -67,12 +69,23 @@ export const MessageList: React.FC<MessageListProps> = ({
             messagesContainerRef.current.scrollTop = scrollDiff;
             prevScrollHeight.current = 0;
         }
-    }, [chatMessages]);
+    }, [chatMessages.length]); // Changed dependency to length to catch updates
 
     // Initial scroll to bottom
     useEffect(() => {
-        scrollToBottom("instant");
+        // Use a small timeout to ensure DOM is ready
+        const timeoutId = setTimeout(() => {
+            scrollToBottom("instant");
+        }, 100);
+        return () => clearTimeout(timeoutId);
     }, [chatId]);
+
+    // Force scroll to bottom when messages first load if they were empty
+    useEffect(() => {
+        if (chatMessages.length > 0 && shouldAutoScroll) {
+            scrollToBottom("instant");
+        }
+    }, [chatId]); // This might be redundant with the above, but ensures if messages come in later
 
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);

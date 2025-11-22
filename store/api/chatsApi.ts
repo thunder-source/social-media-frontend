@@ -5,6 +5,31 @@ export const chatsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getChats: builder.query<Chat[], void>({
       query: () => '/chats',
+      transformResponse: (response: any[]) => {
+        return response.map((chat) => ({
+          id: chat.id || chat._id,
+          participants: chat.participants.map((p: any) => ({
+            id: p.id || p._id,
+            name: p.name,
+            email: p.email,
+            image: p.image || p.photo,
+            friendsCount: p.friendsCount,
+          })),
+          lastMessage: chat.lastMessage ? {
+            id: chat.lastMessage.id || chat.lastMessage._id,
+            chatId: chat.lastMessage.chatId,
+            senderId: typeof chat.lastMessage.senderId === 'object' 
+              ? (chat.lastMessage.senderId.id || chat.lastMessage.senderId._id) 
+              : chat.lastMessage.senderId,
+            content: chat.lastMessage.text || chat.lastMessage.content,
+            createdAt: chat.lastMessage.createdAt,
+            readBy: chat.lastMessage.readBy,
+            sender: typeof chat.lastMessage.senderId === 'object' ? chat.lastMessage.senderId : undefined,
+          } : undefined,
+          unreadCount: chat.unreadCount || 0,
+          updatedAt: chat.updatedAt,
+        }));
+      },
       providesTags: ['Chats'],
     }),
     createChat: builder.mutation<Chat, { partnerId: string }>({
@@ -50,6 +75,17 @@ export const chatsApi = apiSlice.injectEndpoints({
         'Chats',
       ],
     }),
+    markMessageAsRead: builder.mutation<void, string>({
+      query: (messageId) => ({
+        url: `/messages/${messageId}/read`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, messageId) => [
+        { type: 'Messages', id: messageId }, // Ideally we invalidate the specific message or the list
+        'Chats', // Update unread counts in chat list
+      ],
+      // Optimistic update could be added here but invalidation is safer for now
+    }),
   }),
 });
 
@@ -59,4 +95,5 @@ export const {
   useGetMessagesQuery,
   useLazyGetMessagesQuery,
   useSendMessageMutation,
+  useMarkMessageAsReadMutation,
 } = chatsApi;

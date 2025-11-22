@@ -226,9 +226,9 @@ export default function ChatPage() {
                       {/* Avatar with online status */}
                       <div className="relative shrink-0">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage src={otherParticipant?.image} alt={otherParticipant?.name} />
+                          <AvatarImage src={otherParticipant?.image || otherParticipant?.photo} alt={otherParticipant?.name} />
                           <AvatarFallback>
-                            {otherParticipant?.name.charAt(0).toUpperCase()}
+                            {otherParticipant?.name?.charAt(0).toUpperCase() || "?"}
                           </AvatarFallback>
                         </Avatar>
                         <div
