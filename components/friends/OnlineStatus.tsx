@@ -9,13 +9,13 @@ interface OnlineStatusProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export const OnlineStatus = ({ 
-  userId, 
-  showLabel = true, 
-  size = 'md' 
+export const OnlineStatus = ({
+  userId,
+  showLabel = true,
+  size = 'md'
 }: OnlineStatusProps) => {
   const onlineUsers = useAppSelector((state: RootState) => state.auth.onlineUsers);
-  const isOnline = onlineUsers.includes(userId);
+  const isOnline = !!onlineUsers[userId];
 
   // Size mapping for the indicator dot
   const sizeClasses = {
@@ -38,15 +38,14 @@ export const OnlineStatus = ({
       <div className="relative flex items-center justify-center">
         {/* Status indicator dot */}
         <div
-          className={`${dotSize} rounded-full transition-all duration-300 ${
-            isOnline
-              ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-              : 'bg-gray-400 dark:bg-gray-600'
-          }`}
+          className={`${dotSize} rounded-full transition-all duration-300 ${isOnline
+            ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+            : 'bg-gray-400 dark:bg-gray-600'
+            }`}
           role="status"
           aria-label={isOnline ? "Online" : "Offline"}
         />
-        
+
         {/* Pulse animation for online status */}
         {isOnline && (
           <div

@@ -134,11 +134,12 @@ export type NotificationType =
 export interface Notification {
   id: string;
   _id?: string;
-  type: NotificationType;
+  type: NotificationType | string; // Allow string for raw API values
   userId: string; // The user receiving the notification
-  actorId: string; // The user who triggered the notification
-  actor?: User; // Populated actor user
-  postId?: string;
+  fromUser?: User; // The user who triggered the notification (API response)
+  actorId?: string; // Keep for backward compatibility if needed
+  actor?: User; // Keep for backward compatibility if needed
+  postId?: string | { _id: string; [key: string]: any }; // Can be string or object
   post?: Post;
   commentId?: string;
   friendRequestId?: string;

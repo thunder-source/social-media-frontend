@@ -20,6 +20,7 @@ export const apiSlice = createApi({
     baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
     credentials: 'include', // This ensures cookies are sent with every request
   }),
+  tagTypes: ['Chats', 'Messages'],
   endpoints: (builder) => ({
     getCurrentUser: builder.query<User, void>({
       query: () => '/auth/me',

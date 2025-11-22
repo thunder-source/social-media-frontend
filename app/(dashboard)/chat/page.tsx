@@ -5,10 +5,19 @@ import { useChat } from "@/hooks/useChat";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Search } from "lucide-react";
+import { MessageSquare, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useFriends } from "@/hooks/useFriends";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,16 +34,24 @@ export default function ChatPage() {
     stopTyping,
     loadMoreMessages,
     selectChat,
+    createChat,
   } = useChat();
 
   const { user, onlineUsers } = useSelector((state: RootState) => state.auth);
+  const { friends } = useFriends();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
   // Filter chats based on search
   const filteredChats = chats.filter((chat) => {
     const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
     return otherParticipant?.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  // Filter friends for new chat
+  const filteredFriends = friends.filter((friend) =>
+    friend.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Format timestamp for chat list
   const formatChatTime = (timestamp: string) => {
@@ -87,16 +104,76 @@ export default function ChatPage() {
     }
   };
 
+  const handleStartNewChat = async (friendId: string) => {
+    try {
+      await createChat(friendId);
+      setIsNewChatOpen(false);
+      setSearchQuery(""); // Clear search after selection
+    } catch (error) {
+      // Error handled in useChat
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       {/* Sidebar - Chat List */}
       <div className="w-full max-w-sm border-r bg-card/50 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b">
-          <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            Messages
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <MessageSquare className="h-6 w-6 text-primary" />
+              Messages
+            </h1>
+            <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost">
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>New Message</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search friends..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      {filteredFriends.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4">
+                          No friends found
+                        </p>
+                      ) : (
+                        filteredFriends.map((friend) => (
+                          <button
+                            key={friend.id}
+                            onClick={() => handleStartNewChat(friend.id)}
+                            className="w-full flex items-center gap-3 p-2 hover:bg-accent rounded-lg transition-colors"
+                          >
+                            <Avatar>
+                              <AvatarImage src={friend.image} />
+                              <AvatarFallback>
+                                {friend.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{friend.name}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
 
           {/* Search */}
           <div className="relative">
@@ -129,7 +206,7 @@ export default function ChatPage() {
                 filteredChats.map((chat) => {
                   const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
                   const isOnline = otherParticipant
-                    ? onlineUsers.includes(otherParticipant.id)
+                    ? !!onlineUsers[otherParticipant.id]
                     : false;
                   const isSelected = currentChat?.id === chat.id;
 

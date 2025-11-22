@@ -6,14 +6,14 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  onlineUsers: string[];
+    onlineUsers: Record<string, string>; // userId -> timestamp
 }
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: true, // Start loading to check for session
-  onlineUsers: [],
+  onlineUsers: {},
 };
 
 const authSlice = createSlice({
@@ -34,15 +34,18 @@ const authSlice = createSlice({
       state.isLoading = action.payload;
     },
     setOnlineUsers: (state, action: PayloadAction<string[]>) => {
-      state.onlineUsers = action.payload;
+      // Convert array of IDs to Record with current timestamp
+      const timestamp = new Date().toISOString();
+      state.onlineUsers = action.payload.reduce((acc, userId) => {
+        acc[userId] = timestamp;
+        return acc;
+      }, {} as Record<string, string>);
     },
-    setUserOnline: (state, action: PayloadAction<string>) => {
-      if (!state.onlineUsers.includes(action.payload)) {
-        state.onlineUsers.push(action.payload);
-      }
+    setUserOnline: (state, action: PayloadAction<{ userId: string; timestamp: string }>) => {
+      state.onlineUsers[action.payload.userId] = action.payload.timestamp;
     },
     setUserOffline: (state, action: PayloadAction<string>) => {
-      state.onlineUsers = state.onlineUsers.filter(id => id !== action.payload);
+      delete state.onlineUsers[action.payload];
     },
   },
   extraReducers: (builder) => {

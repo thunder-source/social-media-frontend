@@ -4,7 +4,7 @@ import { useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { useAppDispatch } from "@/store/hooks";
-import { socket } from "@/lib/socket";
+import { useSocket } from "@/components/providers/SocketProvider";
 import type { Notification } from "@/types";
 import { toast } from "sonner";
 import {
@@ -37,6 +37,7 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 export function useNotifications() {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { socket } = useSocket();
   const {
     notifications,
     unreadCount,
@@ -103,7 +104,7 @@ export function useNotifications() {
 
   // Socket listener for new notifications
   useEffect(() => {
-    if (!isAuthenticated || !user?.id) return;
+    if (!isAuthenticated || !user?.id || !socket) return;
 
     const handleNewNotification = (notification: Notification) => {
       console.log("📬 New notification received:", notification);
@@ -124,12 +125,12 @@ export function useNotifications() {
       });
     };
 
-    socket.on("notification:new", handleNewNotification);
+    socket.on("notification", handleNewNotification);
 
     return () => {
-      socket.off("notification:new", handleNewNotification);
+      socket.off("notification", handleNewNotification);
     };
-  }, [isAuthenticated, user?.id, hasPermission, dispatch]);
+  }, [isAuthenticated, user?.id, hasPermission, dispatch, socket]);
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
@@ -140,14 +141,12 @@ export function useNotifications() {
       // Call API
       await markAsReadMutation(notificationId).unwrap();
 
-      // Emit socket event
-      socket.emit("notification:read", notificationId);
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
       // Refetch to sync state
       refetch();
     }
-  }, [dispatch, markAsReadMutation, refetch]);
+  }, [dispatch, markAsReadMutation, refetch, socket]);
 
   // Mark all as read
   const markAllAsRead = useCallback(async () => {

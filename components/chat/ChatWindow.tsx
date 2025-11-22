@@ -42,7 +42,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Get the other participant (assuming 1-on-1 chat)
   const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
-  const isOnline = otherParticipant ? onlineUsers.includes(otherParticipant.id) : false;
+  const isOnline = otherParticipant ? !!onlineUsers[otherParticipant.id] : false;
 
   // Mark messages as read when chat window is opened
   useEffect(() => {

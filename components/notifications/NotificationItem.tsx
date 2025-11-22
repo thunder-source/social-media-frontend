@@ -42,55 +42,73 @@ const notificationConfig: Record<NotificationType, {
         icon: Heart,
         iconBg: "bg-red-100 dark:bg-red-950",
         iconColor: "text-red-600 dark:text-red-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: () => "liked your post",
-        getRoute: (n) => n.postId ? `/feed?post=${n.postId}` : null,
+        getRoute: (n) => {
+            const postId = typeof n.postId === 'object' ? n.postId?._id : n.postId;
+            return postId ? `/feed?post=${postId}` : null;
+        },
     },
     COMMENT: {
         icon: MessageCircle,
         iconBg: "bg-blue-100 dark:bg-blue-950",
         iconColor: "text-blue-600 dark:text-blue-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: (n) => n.message || "commented on your post",
-        getRoute: (n) => n.postId ? `/feed?post=${n.postId}` : null,
+        getRoute: (n) => {
+            const postId = typeof n.postId === 'object' ? n.postId?._id : n.postId;
+            return postId ? `/feed?post=${postId}` : null;
+        },
     },
     FRIEND_REQUEST: {
         icon: UserPlus,
         iconBg: "bg-purple-100 dark:bg-purple-950",
         iconColor: "text-purple-600 dark:text-purple-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: () => "sent you a friend request",
-        getRoute: (n) => `/profile/${n.actorId}`,
+        getRoute: (n) => {
+            const userId = n.fromUser?._id || n.fromUser?.id || n.actorId;
+            return userId ? `/profile/${userId}` : null;
+        },
     },
     FRIEND_ACCEPTED: {
         icon: UserCheck,
         iconBg: "bg-green-100 dark:bg-green-950",
         iconColor: "text-green-600 dark:text-green-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: () => "accepted your friend request",
-        getRoute: (n) => `/profile/${n.actorId}`,
+        getRoute: (n) => {
+            const userId = n.fromUser?._id || n.fromUser?.id || n.actorId;
+            return userId ? `/profile/${userId}` : null;
+        },
     },
     MENTION: {
         icon: AtSign,
         iconBg: "bg-orange-100 dark:bg-orange-950",
         iconColor: "text-orange-600 dark:text-orange-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: () => "mentioned you in a comment",
-        getRoute: (n) => n.postId ? `/feed?post=${n.postId}` : null,
+        getRoute: (n) => {
+            const postId = typeof n.postId === 'object' ? n.postId?._id : n.postId;
+            return postId ? `/feed?post=${postId}` : null;
+        },
     },
     POST_SHARE: {
         icon: Share2,
         iconBg: "bg-cyan-100 dark:bg-cyan-950",
         iconColor: "text-cyan-600 dark:text-cyan-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: () => "shared your post",
-        getRoute: (n) => n.postId ? `/feed?post=${n.postId}` : null,
+        getRoute: (n) => {
+            const postId = typeof n.postId === 'object' ? n.postId?._id : n.postId;
+            return postId ? `/feed?post=${postId}` : null;
+        },
     },
     MESSAGE: {
         icon: Mail,
         iconBg: "bg-indigo-100 dark:bg-indigo-950",
         iconColor: "text-indigo-600 dark:text-indigo-400",
-        getTitle: (n) => n.actor?.name || "Someone",
+        getTitle: (n) => n.fromUser?.name || n.actor?.name || "Someone",
         getMessage: (n) => n.message || "sent you a message",
         getRoute: () => "/chat",
     },
@@ -108,6 +126,12 @@ function normalizeNotificationType(type: string): NotificationType | null {
         'FRIEND_REQUEST': 'FRIEND_REQUEST',
         'FRIEND_ACCEPTED': 'FRIEND_ACCEPTED',
         'POST_COMMENT': 'COMMENT',
+        // Add lowercase mappings for API response
+        'post_like': 'LIKE',
+        'new_message': 'MESSAGE',
+        'friend_request': 'FRIEND_REQUEST',
+        'friend_accepted': 'FRIEND_ACCEPTED',
+        'post_comment': 'COMMENT',
     };
 
     // Check if it's a known mapped type
@@ -201,11 +225,11 @@ export function NotificationItem({
                 {/* Actor Avatar */}
                 <Avatar className="h-10 w-10 ring-2 ring-background">
                     <AvatarImage
-                        src={notification.actor?.photo || notification.actor?.image}
-                        alt={notification.actor?.name}
+                        src={notification.fromUser?.photo || notification.fromUser?.image || notification.actor?.photo || notification.actor?.image}
+                        alt={notification.fromUser?.name || notification.actor?.name}
                     />
                     <AvatarFallback>
-                        {notification.actor?.name?.charAt(0)?.toUpperCase() || "?"}
+                        {(notification.fromUser?.name || notification.actor?.name)?.charAt(0)?.toUpperCase() || "?"}
                     </AvatarFallback>
                 </Avatar>
 

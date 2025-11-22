@@ -3,9 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { socket } from "@/lib/socket";
+import { useSocket } from "@/components/providers/SocketProvider";
 import type { Message, Chat } from "@/types";
 import { toast } from "sonner";
+
+import {
+  useGetChatsQuery,
+  useCreateChatMutation,
+  useGetMessagesQuery,
+  useLazyGetMessagesQuery,
+  useSendMessageMutation,
+} from "@/store/api/chatsApi";
 
 interface UseChatReturn {
   messages: Message[];
@@ -18,43 +26,92 @@ interface UseChatReturn {
   stopTyping: (chatId: string) => void;
   loadMoreMessages: (chatId: string, offset: number) => Promise<void>;
   selectChat: (chatId: string) => void;
+  createChat: (partnerId: string) => Promise<Chat>;
 }
 
 export const useChat = (): UseChatReturn => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [chats, setChats] = useState<Chat[]>([]);
+  const { socket } = useSocket();
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
-  // Handle incoming new messages
-  const handleNewMessage = useCallback((message: Message) => {
-    console.log("📨 New message received:", message);
+  // RTK Query hooks
+  const { data: chats = [], refetch: refetchChats } = useGetChatsQuery(undefined, {
+    skip: !user,
+  });
+
+  const [createChatMutation] = useCreateChatMutation();
+  const [sendMessageMutation] = useSendMessageMutation();
+  
+  // We'll use lazy query for messages to fetch only when a chat is selected
+  const [triggerGetMessages, { data: fetchedMessages }] = useLazyGetMessagesQuery();
+
+  // Local state for messages to combine API data + real-time updates
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Sync fetched messages to local state
+  useEffect(() => {
+    if (Array.isArray(fetchedMessages)) {
+      setMessages(fetchedMessages);
+    } else {
+      setMessages([]);
+    }
+  }, [fetchedMessages]);
+
+  // Helper to get recipient ID
+  const getRecipientId = useCallback((chat: Chat | null) => {
+    if (!chat || !user?.id) return null;
+    return chat.participants.find(p => p.id !== user.id)?.id;
+  }, [user?.id]);
+
+  // Handle incoming new messages (received from other users)
+  const handleNewMessage = useCallback((data: { message: any; chatId: string }) => {
+    console.log("📨 New message received:", data);
+    const rawMessage = data.message;
     
-    // Add message to messages list
+    // Transform raw message to match Message interface
+    const message: Message = {
+      id: rawMessage.id || rawMessage._id,
+      chatId: rawMessage.chatId,
+      senderId: typeof rawMessage.senderId === 'object' ? (rawMessage.senderId._id || rawMessage.senderId.id) : rawMessage.senderId,
+      content: rawMessage.content || rawMessage.text,
+      createdAt: rawMessage.createdAt,
+      readBy: Array.isArray(rawMessage.readBy) ? rawMessage.readBy.map((u: any) => (typeof u === 'object' ? (u._id || u.id) : u)) : [],
+      sender: typeof rawMessage.senderId === 'object' ? rawMessage.senderId : { id: rawMessage.senderId, name: 'Unknown', email: '' } as any,
+    };
+
+    // Add message to messages list if it belongs to current chat
     setMessages((prev) => {
-      // Check if message already exists (prevent duplicates)
-      if (prev.some(m => m.id === message.id)) {
-        return prev;
-      }
+      if (prev.some(m => m.id === message.id)) return prev;
       return [...prev, message];
     });
 
-    // Update chat's last message and unread count
-    setChats((prev) =>
-      prev.map((chat) => {
-        if (chat.id === message.chatId) {
-          return {
-            ...chat,
-            lastMessage: message,
-            unreadCount: message.senderId === user?.id ? 0 : chat.unreadCount + 1,
-            updatedAt: message.createdAt,
-          };
-        }
-        return chat;
-      })
-    );
-  }, [user?.id]);
+    // Refetch chats to update last message and unread count
+    refetchChats();
+  }, [refetchChats]);
+
+  // Handle message sent confirmation (own message)
+  const handleMessageSent = useCallback((data: { message: any; chatId: string }) => {
+    console.log("✅ Message sent confirmation:", data);
+    const rawMessage = data.message;
+
+    const message: Message = {
+      id: rawMessage.id || rawMessage._id,
+      chatId: rawMessage.chatId,
+      senderId: typeof rawMessage.senderId === 'object' ? (rawMessage.senderId._id || rawMessage.senderId.id) : rawMessage.senderId,
+      content: rawMessage.content || rawMessage.text,
+      createdAt: rawMessage.createdAt,
+      readBy: Array.isArray(rawMessage.readBy) ? rawMessage.readBy.map((u: any) => (typeof u === 'object' ? (u._id || u.id) : u)) : [],
+      sender: typeof rawMessage.senderId === 'object' ? rawMessage.senderId : { id: rawMessage.senderId, name: 'Unknown', email: '' } as any,
+    };
+
+    setMessages((prev) => {
+      if (prev.some(m => m.id === message.id)) return prev;
+      return [...prev, message];
+    });
+    
+    refetchChats();
+  }, [refetchChats]);
 
   // Handle message read receipt
   const handleMessageRead = useCallback(
@@ -103,66 +160,72 @@ export const useChat = (): UseChatReturn => {
 
   // Send message
   const sendMessage = useCallback(
-    (content: string, chatId: string) => {
-      if (!content.trim() || !user?.id) return;
+    async (content: string, chatId: string) => {
+      if (!content.trim() || !user?.id || !socket) return;
 
-      if (!socket.connected) {
-        toast.error("Connection lost. Cannot send message.");
+      const recipientId = getRecipientId(currentChat);
+      if (!recipientId) {
+        toast.error("Cannot send message: Recipient not found");
         return;
       }
 
-      const messageData = {
+      // Emit socket event
+      socket.emit("send_message", {
         chatId,
-        content: content.trim(),
-        senderId: user.id,
-      };
-
-      try {
-        socket.emit("message:new", messageData);
-      } catch (error) {
-        console.error("Failed to send message:", error);
-        toast.error("Failed to send message");
-      }
+        text: content.trim(),
+        recipientId
+      });
     },
-    [user?.id]
+    [user?.id, currentChat, getRecipientId, socket]
   );
 
   // Mark message as read
   const markAsRead = useCallback(
     (messageId: string) => {
-      if (!user?.id) return;
+      if (!user?.id || !socket) return;
 
-      socket.emit("message:read", { messageId, userId: user.id });
+      const message = messages.find(m => m.id === messageId);
+      if (!message) return;
+
+      // We need to send the SENDER's ID to the backend so it can notify them
+      // The backend expects { messageId, senderId } where senderId is the message sender
+      socket.emit("message_read", { 
+        messageId, 
+        senderId: message.senderId 
+      });
     },
-    [user?.id]
+    [user?.id, messages, socket]
   );
 
   // Start typing indicator
   const startTyping = useCallback(
     (chatId: string) => {
-      if (!user?.id) return;
-
-      socket.emit("typing:start", { chatId, userId: user.id });
+      if (!user?.id || !socket) return;
+      const recipientId = getRecipientId(currentChat);
+      if (recipientId) {
+        socket.emit("typing:start", { chatId, recipientId });
+      }
     },
-    [user?.id]
+    [user?.id, currentChat, getRecipientId, socket]
   );
 
   // Stop typing indicator
   const stopTyping = useCallback(
     (chatId: string) => {
-      if (!user?.id) return;
-
-      socket.emit("typing:stop", { chatId, userId: user.id });
+      if (!user?.id || !socket) return;
+      const recipientId = getRecipientId(currentChat);
+      if (recipientId) {
+        socket.emit("typing:stop", { chatId, recipientId });
+      }
     },
-    [user?.id]
+    [user?.id, currentChat, getRecipientId, socket]
   );
 
-  // Load more messages (pagination)
+  // Load more messages (pagination) - NOT IMPLEMENTED IN API YET
   const loadMoreMessages = useCallback(
     async (chatId: string, offset: number) => {
-      // This would typically call an API endpoint
-      // For now, we'll emit a socket event
-      socket.emit("messages:fetch", { chatId, offset, limit: 20 });
+      // Placeholder for pagination
+      console.log("Load more messages not implemented via API yet");
     },
     []
   );
@@ -172,47 +235,49 @@ export const useChat = (): UseChatReturn => {
     const chat = chats.find((c) => c.id === chatId);
     if (chat) {
       setCurrentChat(chat);
+      triggerGetMessages(chatId);
       
-      // Mark unread messages as read
-      const unreadMessages = messages.filter(
-        (msg) => 
-          msg.chatId === chatId && 
-          msg.senderId !== user?.id && 
-          !msg.readBy.includes(user?.id || "")
-      );
-      
-      unreadMessages.forEach((msg) => markAsRead(msg.id));
+      // Mark unread messages as read (optimistic/local)
+      // We should ideally wait for messages to load, but we can try to mark existing ones
+      // The actual marking happens when messages are rendered or when we have them
     }
-  }, [chats, messages, user?.id, markAsRead]);
+  }, [chats, triggerGetMessages]);
+
+  // Create chat
+  const createChat = useCallback(async (partnerId: string) => {
+    try {
+      const chat = await createChatMutation({ partnerId }).unwrap();
+      // Refetch chats to include the new one
+      await refetchChats();
+      // Select the new chat
+      selectChat(chat.id);
+      return chat;
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+      toast.error("Failed to create chat");
+      throw error;
+    }
+  }, [createChatMutation, refetchChats, selectChat]);
 
   // Set up socket event listeners
   useEffect(() => {
+    if (!socket) return;
+
     socket.on("message:new", handleNewMessage);
+    socket.on("message:sent", handleMessageSent); // Listen for own message confirmation
     socket.on("message:read", handleMessageRead);
     socket.on("typing:start", handleTypingStart);
     socket.on("typing:stop", handleTypingStop);
 
-    // Handle fetched messages (pagination response)
-    const handleMessagesFetched = (fetchedMessages: Message[]) => {
-      setMessages((prev) => {
-        const newMessages = fetchedMessages.filter(
-          (newMsg) => !prev.some((msg) => msg.id === newMsg.id)
-        );
-        return [...newMessages, ...prev];
-      });
-    };
-
-    socket.on("messages:fetched", handleMessagesFetched);
-
     // Cleanup
     return () => {
       socket.off("message:new", handleNewMessage);
+      socket.off("message:sent", handleMessageSent);
       socket.off("message:read", handleMessageRead);
       socket.off("typing:start", handleTypingStart);
       socket.off("typing:stop", handleTypingStop);
-      socket.off("messages:fetched", handleMessagesFetched);
     };
-  }, [handleNewMessage, handleMessageRead, handleTypingStart, handleTypingStop]);
+  }, [socket, handleNewMessage, handleMessageSent, handleMessageRead, handleTypingStart, handleTypingStop]);
 
   // Auto-clear typing indicators after timeout (3 seconds)
   useEffect(() => {
@@ -236,5 +301,6 @@ export const useChat = (): UseChatReturn => {
     stopTyping,
     loadMoreMessages,
     selectChat,
+    createChat,
   };
 };
