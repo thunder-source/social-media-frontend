@@ -96,6 +96,33 @@ const notificationConfig: Record<NotificationType, {
     },
 };
 
+// Helper function to normalize notification types
+function normalizeNotificationType(type: string): NotificationType | null {
+    // Convert to uppercase and replace hyphens/underscores
+    const normalized = type.toUpperCase().replace(/-/g, '_');
+
+    // Map common backend type variations to frontend types
+    const typeMap: Record<string, NotificationType> = {
+        'POST_LIKE': 'LIKE',
+        'NEW_MESSAGE': 'MESSAGE',
+        'FRIEND_REQUEST': 'FRIEND_REQUEST',
+        'FRIEND_ACCEPTED': 'FRIEND_ACCEPTED',
+        'POST_COMMENT': 'COMMENT',
+    };
+
+    // Check if it's a known mapped type
+    if (typeMap[normalized]) {
+        return typeMap[normalized];
+    }
+
+    // Check if it's a valid NotificationType
+    if (normalized in notificationConfig) {
+        return normalized as NotificationType;
+    }
+
+    return null;
+}
+
 export function NotificationItem({
     notification,
     onRead,
@@ -105,7 +132,16 @@ export function NotificationItem({
     const router = useRouter();
     const { acceptFriendRequest, rejectFriendRequest } = useFriends();
 
-    const config = notificationConfig[notification.type];
+    // Normalize notification type to handle backend/frontend format differences
+    const normalizedType = normalizeNotificationType(notification.type);
+
+    // Handle unrecognized notification types
+    if (!normalizedType) {
+        console.error(`Unknown notification type: ${notification.type}`);
+        return null;
+    }
+
+    const config = notificationConfig[normalizedType];
     const Icon = config.icon;
 
     const handleClick = () => {
@@ -198,7 +234,7 @@ export function NotificationItem({
                     </p>
 
                     {/* Friend Request Actions */}
-                    {notification.type === "FRIEND_REQUEST" && !notification.read && (
+                    {normalizedType === "FRIEND_REQUEST" && !notification.read && (
                         <div className="flex gap-2 mt-3">
                             <Button
                                 size="sm"

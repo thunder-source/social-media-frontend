@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useInView } from 'react-intersection-observer';
+import { useVideoPlayback } from '@/components/providers/VideoPlaybackProvider';
 import { Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,21 +19,23 @@ export default function VideoPlayer({
   poster,
   className,
   videoId,
-  activeVideoId,
-  onPlay
 }: VideoPlayerProps & {
   videoId?: string;
-  activeVideoId?: string | null;
-  onPlay?: (id: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const dispatch = useDispatch();
   const isMuted = useSelector((state: RootState) => state.ui.isMuted);
   const [isLoading, setIsLoading] = useState(true);
-  const { ref, inView } = useInView({
-    threshold: 0.6, // Play when 60% visible
-  });
+
+  // Use global video context
+  const { registerVideo, unregisterVideo, activeVideoId, manualPause, manualPlay } = useVideoPlayback();
+
+  // Generate a unique ID if none provided
+  const idRef = useRef(videoId || Math.random().toString(36).substr(2, 9));
+  const id = idRef.current;
+
   // Track if video was auto-paused due to tab visibility change
   const wasAutoPausedRef = useRef(false);
 
@@ -42,31 +44,42 @@ export default function VideoPlayer({
     dispatch(initializeAudioState());
   }, [dispatch]);
 
-  // Handle autoplay when in view
+  // Register with context
   useEffect(() => {
-    if (inView) {
-      // If we have coordination props, use them
-      if (videoId && onPlay) {
-        onPlay(videoId);
+    if (containerRef.current) {
+      registerVideo(id, containerRef.current);
+    }
+    return () => {
+      unregisterVideo(id);
+    };
+  }, [id, registerVideo, unregisterVideo]);
+
+  // React to active video changes
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (activeVideoId === id) {
+      // We are the chosen one!
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch((error) => {
+            console.error("Autoplay prevented:", error);
+            setIsPlaying(false);
+          });
       }
-
-      videoRef.current?.play().catch(() => {
-        // Autoplay might be blocked
-        setIsPlaying(false);
-      });
     } else {
-      videoRef.current?.pause();
-      setIsPlaying(false);
+      // We are not the chosen one
+      if (!video.paused) {
+        video.pause();
+        setIsPlaying(false);
+      }
     }
-  }, [inView, videoId, onPlay]);
-
-  // Handle pausing when another video becomes active
-  useEffect(() => {
-    if (activeVideoId && videoId && activeVideoId !== videoId) {
-      videoRef.current?.pause();
-      setIsPlaying(false);
-    }
-  }, [activeVideoId, videoId]);
+  }, [activeVideoId, id]);
 
   // Handle pausing/resuming when tab visibility changes
   useEffect(() => {
@@ -79,10 +92,9 @@ export default function VideoPlayer({
           wasAutoPausedRef.current = true; // Mark as auto-paused
         }
       } else {
-        // Tab is visible again - resume video if it was auto-paused
-        if (wasAutoPausedRef.current && videoRef.current) {
+        // Tab is visible again - resume video if it was auto-paused AND we are still the active video
+        if (wasAutoPausedRef.current && videoRef.current && activeVideoId === id) {
           videoRef.current.play().catch(() => {
-            // Play might fail, just ignore
             setIsPlaying(false);
           });
           setIsPlaying(true);
@@ -96,21 +108,19 @@ export default function VideoPlayer({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [activeVideoId, id]);
 
   const togglePlay = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
-        wasAutoPausedRef.current = false; // User manually paused, so don't auto-resume
+        manualPause(id);
+        wasAutoPausedRef.current = false;
       } else {
-        // If we're starting playback, notify parent
-        if (videoId && onPlay) {
-          onPlay(videoId);
-        }
+        manualPlay(id);
         videoRef.current.play();
-        wasAutoPausedRef.current = false; // User manually played
+        wasAutoPausedRef.current = false;
       }
       setIsPlaying(!isPlaying);
     }
@@ -128,7 +138,7 @@ export default function VideoPlayer({
 
   return (
     <div
-      ref={ref}
+      ref={containerRef}
       className={cn("relative overflow-hidden bg-black aspect-video group cursor-pointer", className)}
       onClick={togglePlay}
     >

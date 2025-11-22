@@ -47,11 +47,9 @@ interface PostCardProps {
   onComment?: (postId: string, text: string) => Promise<void>;
   onUpdate?: (postId: string, text: string, media?: 'image' | 'video' | 'null') => Promise<void>;
   onDelete?: (postId: string) => Promise<void>;
-  activeVideoId?: string | null;
-  onPlayVideo?: (id: string) => void;
 }
 
-export default function PostCard({ post, onLike, onComment, onUpdate, onDelete, activeVideoId, onPlayVideo }: PostCardProps) {
+export default function PostCard({ post, onLike, onComment, onUpdate, onDelete }: PostCardProps) {
   const router = useRouter();
   const { checkFriendshipStatus, sendFriendRequest } = useFriends();
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
@@ -225,8 +223,6 @@ export default function PostCard({ post, onLike, onComment, onUpdate, onDelete, 
                 <VideoPlayer
                   src={post.mediaUrl}
                   videoId={`${post.id}-main`}
-                  activeVideoId={activeVideoId}
-                  onPlay={onPlayVideo}
                 />
               ) : null}
             </div>
@@ -254,8 +250,6 @@ export default function PostCard({ post, onLike, onComment, onUpdate, onDelete, 
                     <VideoPlayer
                       src={attachment.url}
                       videoId={attachment.id}
-                      activeVideoId={activeVideoId}
-                      onPlay={onPlayVideo}
                     />
                   )}
                 </div>

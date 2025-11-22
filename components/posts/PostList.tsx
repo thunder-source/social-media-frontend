@@ -20,8 +20,6 @@ interface PostListProps {
     onComment: (postId: string, text: string) => Promise<void>;
     onUpdate: (postId: string, text: string, media?: 'image' | 'video' | 'null') => Promise<void>;
     onDelete: (postId: string) => Promise<void>;
-    activeVideoId: string | null;
-    onPlayVideo: (id: string) => void;
     error?: string;
     onRetry?: () => void;
 }
@@ -35,8 +33,6 @@ export default function PostList({
     onComment,
     onUpdate,
     onDelete,
-    activeVideoId,
-    onPlayVideo,
     error,
     onRetry,
 }: PostListProps) {
@@ -81,8 +77,6 @@ export default function PostList({
                         onComment={onComment}
                         onUpdate={onUpdate}
                         onDelete={onDelete}
-                        activeVideoId={activeVideoId}
-                        onPlayVideo={onPlayVideo}
                     />
                 </SectionErrorBoundary>
             ))}

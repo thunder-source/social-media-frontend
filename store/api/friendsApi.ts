@@ -13,12 +13,36 @@ export const friendsApi = createApi({
     getFriends: builder.query<User[], void>({
       query: () => '/friends',
       providesTags: ['Friends'],
+      transformResponse: (response: { friends: any[], count: number }) => {
+        // Map photo to image for compatibility and ensure id is set
+        return response.friends.map(friend => ({
+          ...friend,
+          id: friend.id || friend._id,
+          image: friend.image || friend.photo,
+        }));
+      },
     }),
     
     // Get pending friend requests
     getPendingRequests: builder.query<FriendRequest[], void>({
       query: () => '/friends/requests',
       providesTags: ['FriendRequests'],
+      transformResponse: (response: { requests: any[], count: number }) => {
+        // Map API response fields to expected format
+        // API uses 'from' and 'to' but we expect 'sender', 'senderId', 'receiverId'
+        return response.requests.map(request => ({
+          ...request,
+          id: request.id || request._id,
+          senderId: request.from?.id || request.from?._id,
+          receiverId: request.to,
+          status: request.status?.toUpperCase() as 'PENDING' | 'ACCEPTED' | 'REJECTED',
+          sender: {
+            ...request.from,
+            id: request.from.id || request.from._id,
+            image: request.from.image || request.from.photo,
+          },
+        }));
+      },
     }),
     
     // Send friend request

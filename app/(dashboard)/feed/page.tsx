@@ -5,6 +5,7 @@ import { RefreshCw } from 'lucide-react';
 import CreatePost from '@/components/posts/CreatePost';
 import PostList from '@/components/posts/PostList';
 import { usePosts } from '@/hooks/usePosts';
+import { VideoPlaybackProvider } from '@/components/providers/VideoPlaybackProvider';
 
 export default function FeedPage() {
   const { posts, loading, hasMore, loadMore, toggleLike, addComment, updatePost, deletePost, refreshPosts } = usePosts();
@@ -16,8 +17,7 @@ export default function FeedPage() {
   const touchStartY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Video playback coordination
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
 
   const handleTouchStart = (e: React.TouchEvent) => {
     // Only start pull if at the top of the page
@@ -106,18 +106,18 @@ export default function FeedPage() {
       >
         <CreatePost />
 
-        <PostList
-          posts={posts}
-          loading={loading}
-          hasMore={hasMore}
-          loadMore={loadMore}
-          onLike={toggleLike}
-          onComment={addComment}
-          onUpdate={updatePost}
-          onDelete={deletePost}
-          activeVideoId={activeVideoId}
-          onPlayVideo={setActiveVideoId}
-        />
+        <VideoPlaybackProvider>
+          <PostList
+            posts={posts}
+            loading={loading}
+            hasMore={hasMore}
+            loadMore={loadMore}
+            onLike={toggleLike}
+            onComment={addComment}
+            onUpdate={updatePost}
+            onDelete={deletePost}
+          />
+        </VideoPlaybackProvider>
       </div>
     </div>
   );
