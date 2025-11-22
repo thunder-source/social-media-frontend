@@ -49,6 +49,10 @@ export const MessageList: React.FC<MessageListProps> = ({
         if (scrollTop < 100 && !isLoading && onLoadMore) {
             prevScrollHeight.current = scrollHeight;
             onLoadMore();
+        } else if (scrollTop >= 100) {
+            // Reset prevScrollHeight if user scrolls down, so we don't jump
+            // back to a previous position when new messages arrive
+            prevScrollHeight.current = 0;
         }
     };
 

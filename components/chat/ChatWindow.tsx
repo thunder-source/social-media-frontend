@@ -46,6 +46,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
   const isOnline = otherParticipant ? !!onlineUsers[otherParticipant.id] : false;
 
+  // Track processed message IDs to prevent infinite loops
+  const processedMessageIds = React.useRef<Set<string>>(new Set());
+
+  // Reset processed IDs when chat changes
+  useEffect(() => {
+    processedMessageIds.current.clear();
+  }, [chat.id]);
+
   // Mark messages as read when chat window is opened or new messages arrive
   useEffect(() => {
     if (messages && user && chat) {
@@ -53,11 +61,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         (msg) =>
           msg.chatId === chat.id &&
           msg.senderId !== user.id &&
-          !msg.readBy.includes(user.id)
+          !msg.readBy.includes(user.id) &&
+          !processedMessageIds.current.has(msg.id)
       );
 
       if (unreadMessages.length > 0) {
         unreadMessages.forEach((msg) => {
+          processedMessageIds.current.add(msg.id);
           markMessageAsRead(msg.id);
         });
       }
