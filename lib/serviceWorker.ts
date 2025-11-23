@@ -206,7 +206,7 @@ export async function sendSubscriptionToBackend(
   apiUrl: string
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${apiUrl}/api/notifications/subscribe`, {
+    const response = await fetch(`${apiUrl}/notifications/subscribe`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
