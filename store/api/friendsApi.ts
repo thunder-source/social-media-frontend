@@ -1,13 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { apiSlice } from './apiSlice';
 import { User, FriendRequest } from '@/types';
 
-export const friendsApi = createApi({
-  reducerPath: 'friendsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-    credentials: 'include', // This ensures cookies are sent with every request
-  }),
-  tagTypes: ['Friends', 'FriendRequests'],
+export const friendsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Get all friends
     getFriends: builder.query<User[], void>({

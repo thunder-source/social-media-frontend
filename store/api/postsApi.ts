@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { apiSlice } from './apiSlice';
 import { Post } from '@/types';
 
 interface FetchPostsResponse {
@@ -14,13 +14,7 @@ interface CreatePostRequest {
 
 type CreatePostPayload = CreatePostRequest | FormData;
 
-export const postsApi = createApi({
-  reducerPath: 'postsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-    credentials: 'include', // This ensures cookies are sent with every request
-  }),
-  tagTypes: ['Posts'],
+export const postsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Get posts with pagination
     getPosts: builder.query<FetchPostsResponse, { page: number; limit?: number }>({

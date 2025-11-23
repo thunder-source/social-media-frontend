@@ -81,7 +81,12 @@ export function useNotifications() {
           const permission = await requestPushPermission();
           dispatch(setPermissionStatus(permission === "granted"));
           
-          if (permission === "granted" && VAPID_PUBLIC_KEY && registration) {
+          // Validate VAPID key format (simple regex for base64url)
+          const isValidVapidKey = VAPID_PUBLIC_KEY && 
+            VAPID_PUBLIC_KEY.length > 10 && 
+            /^[a-zA-Z0-9\-_]+$/.test(VAPID_PUBLIC_KEY);
+
+          if (permission === "granted" && isValidVapidKey && registration) {
             try {
               const subscription = await subscribeToPush(registration, VAPID_PUBLIC_KEY);
               
