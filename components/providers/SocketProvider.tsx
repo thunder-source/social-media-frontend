@@ -37,13 +37,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     // Initialize socket connection
-    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000', {
+    // In production, use empty string to connect to same origin (will be proxied)
+    // In development, use explicit URL or environment variable
+    const socketUrl = process.env.NODE_ENV === 'production'
+      ? '' // Empty string connects to same origin, allowing rewrites to work
+      : (process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000');
+
+    const socketInstance = io(socketUrl, {
       transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,
       reconnectionDelay: 5000,
       reconnectionDelayMax: 10000,
       reconnectionAttempts: 5,
+      path: '/socket.io/', // Ensure this matches your backend socket.io path
     });
 
     socketInstance.on('connect', () => {

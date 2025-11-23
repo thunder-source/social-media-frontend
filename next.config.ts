@@ -20,14 +20,18 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const backendUrl = process.env.NODE_ENV === 'production'
+      ? 'https://social-media-backend-yupk.onrender.com'
+      : 'http://localhost:5000';
+
     return [
-      // {
-      //   source: '/api/socket.io',
-      //   destination: `${process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000'}/socket.io/`,
-      // },
       {
-        source: '/:path*',
-        destination: 'https://social-media-backend-yupk.onrender.com/:path*', //`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/:path*`,
+        source: '/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
+      },
+      {
+        source: '/socket.io/:path*',
+        destination: `${backendUrl}/socket.io/:path*`,
       },
     ];
   },
