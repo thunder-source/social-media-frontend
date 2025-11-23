@@ -11,7 +11,7 @@ import { User } from '../../types/auth';
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: '/api',
+    baseUrl:  process.env.NEXT_PUBLIC_API_URL,
     credentials: 'include', // This ensures cookies are sent with every request
   }),
   tagTypes: ['Chats', 'Messages', 'Posts', 'Friends', 'FriendRequests', 'Notification'],

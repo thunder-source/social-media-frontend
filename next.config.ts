@@ -19,22 +19,21 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    const backendUrl = process.env.NODE_ENV === 'production'
-      ? 'https://social-media-backend-yupk.onrender.com'
-      : 'http://localhost:5000';
-
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-      {
-        source: '/socket.io/:path*',
-        destination: `${backendUrl}/socket.io/:path*`,
-      },
-    ];
-  },
+  // async rewrites() {
+  //   const backendUrl = process.env.NODE_ENV === 'production'
+  //     ? 'https://social-media-backend-yupk.onrender.com'
+  //     : 'http://localhost:5000';
+  //   return [
+  //     {
+  //       source: '/api/:path*',
+  //       destination: `${backendUrl}/api/:path*`,
+  //     },
+  //     {
+  //       source: '/socket.io/:path*',
+  //       destination: `${backendUrl}/socket.io/:path*`,
+  //     },
+  //   ];
+  // },
 };
 
 export default nextConfig;

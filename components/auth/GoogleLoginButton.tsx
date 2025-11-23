@@ -9,7 +9,7 @@ export default function GoogleLoginButton() {
 
   const handleLogin = () => {
     setIsLoading(true);
-    const backendUrl = '/api';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
     window.location.href = `${backendUrl}/auth/google`;
   };
 

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
 import { Toaster } from "@/components/ui/sonner";
 import ErrorBoundary from "@/components/providers/ErrorBoundary";
+import TokenHandler from "@/components/providers/TokenHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary>
+          <TokenHandler />
           <StoreProvider>
             <ThemeProvider
               attribute="class"

@@ -26,6 +26,10 @@ export default function CallbackPage() {
         return;
       }
 
+      // Note: Token handling is now done globally by TokenHandler component
+      // Wait a bit to ensure TokenHandler has processed the token
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       try {
         // Fetch user data from backend /api/auth/me using RTK Query
         // @ts-ignore
