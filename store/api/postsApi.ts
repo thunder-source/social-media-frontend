@@ -17,7 +17,7 @@ type CreatePostPayload = CreatePostRequest | FormData;
 export const postsApi = createApi({
   reducerPath: 'postsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+    baseUrl: '/api',
     credentials: 'include', // This ensures cookies are sent with every request
   }),
   tagTypes: ['Posts'],

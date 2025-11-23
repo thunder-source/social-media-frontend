@@ -140,7 +140,13 @@ export async function subscribeToPush(
     }
 
     // Convert VAPID key from base64 to Uint8Array
-    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+    let convertedVapidKey: Uint8Array;
+    try {
+      convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+    } catch (error) {
+      console.error('Invalid VAPID public key:', error);
+      return null;
+    }
 
     // Subscribe to push notifications
     subscription = await registration.pushManager.subscribe({
@@ -183,19 +189,26 @@ export async function unsubscribeFromPush(
  * Helper function to convert VAPID key
  */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
+  // Sanitize the string: remove whitespace
+  const sanitized = base64String.replace(/\s/g, '');
+  
+  const padding = '='.repeat((4 - (sanitized.length % 4)) % 4);
+  const base64 = (sanitized + padding)
     .replace(/\-/g, '+')
     .replace(/_/g, '/');
 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  try {
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+
+    return outputArray;
+  } catch (error) {
+    throw new Error('Failed to decode VAPID key. Ensure it is a valid URL-safe Base64 string.');
   }
-
-  return outputArray;
 }
 
 /**

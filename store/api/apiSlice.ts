@@ -1,12 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { User } from '../../types/auth';
 
-const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  prepareHeaders: (headers) => {
-    return headers;
-  },
-});
+
 
 // Wrapper to ensure credentials are included in every request if needed, 
 // but actually fetchBaseQuery supports `credentials` in the individual request config 
@@ -17,7 +12,7 @@ const baseQuery = fetchBaseQuery({
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+    baseUrl: '/api',
     credentials: 'include', // This ensures cookies are sent with every request
   }),
   tagTypes: ['Chats', 'Messages'],

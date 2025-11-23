@@ -90,8 +90,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       socketInstance.removeAllListeners();
       socketInstance.disconnect();
+      setSocket(null);
     };
-  }, [user, dispatch]);
+  }, [user, dispatch]); // Removed socket from dependency array to prevent re-initialization loop
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
