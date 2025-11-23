@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import { DotBackground } from "@/components/ui/dot-background";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,12 @@ import DashboardLayout from "./(dashboard)/layout";
 import FeedPage from "./(dashboard)/feed/page";
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, handleOAuthCallback } = useAuth();
+
+  // Handle OAuth callback - extract token from URL if present
+  useEffect(() => {
+    handleOAuthCallback();
+  }, [handleOAuthCallback]);
 
   if (isLoading) {
     return (

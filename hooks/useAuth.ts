@@ -1,6 +1,7 @@
+import { useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
-import { clearUser } from "@/store/slices/authSlice";
+import { clearUser, setToken, setUser } from "@/store/slices/authSlice";
 import { apiSlice, useGetCurrentUserQuery } from "@/store/api/apiSlice";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -40,11 +41,50 @@ export const useAuth = () => {
     }
   };
 
+  // Handle OAuth callback - extract token and user from URL
+  const handleOAuthCallback = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userParam = urlParams.get('user');
+
+    let hasData = false;
+
+    // Extract and save token if present
+    if (token) {
+      dispatch(setToken(token));
+      hasData = true;
+    }
+
+    // Extract and save user data if present
+    if (userParam) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userParam));
+        dispatch(setUser(userData));
+        hasData = true;
+      } catch (error) {
+        console.error('Failed to parse user data from URL:', error);
+      }
+    }
+
+    // Clean up URL by removing OAuth parameters
+    if (hasData) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      url.searchParams.delete('user');
+      window.history.replaceState({}, '', url.toString());
+      
+      toast.success("Logged in successfully");
+    }
+  }, [dispatch]);
+
   return {
     user,
     isAuthenticated,
     isLoading,
     logout,
+    handleOAuthCallback,
   };
 };
 
