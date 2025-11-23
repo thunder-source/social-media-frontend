@@ -31,7 +31,7 @@ import {
   sendSubscriptionToBackend,
 } from "@/lib/serviceWorker";
 
-const API_URL = '/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
 export function useNotifications() {
