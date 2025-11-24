@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import { DotBackground } from "@/components/ui/dot-background";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, MessageCircle, Share2, Globe, Zap, Shield } from "lucide-react";
 import Link from "next/link";
@@ -19,11 +20,7 @@ export default function Home() {
   }, [handleOAuthCallback]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (isAuthenticated) {
