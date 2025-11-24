@@ -181,7 +181,7 @@ export default function VideoPlayer({
       {/* Mute Button */}
       <button
         onClick={toggleMute}
-        className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 duration-200"
+        className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 duration-200"
       >
         {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
       </button>

@@ -142,7 +142,7 @@ export interface Notification {
   postId?: string | { _id: string; [key: string]: any }; // Can be string or object
   post?: Post;
   commentId?: string;
-  friendRequestId?: string;
+  friendRequestId?: string | FriendRequest;
   message?: string;
   read: boolean;
   createdAt: string;

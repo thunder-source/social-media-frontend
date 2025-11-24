@@ -184,8 +184,14 @@ export function NotificationItem({
         e.stopPropagation();
         if (!notification.friendRequestId) return;
 
+        const requestId = typeof notification.friendRequestId === 'string'
+            ? notification.friendRequestId
+            : notification.friendRequestId?.id;
+
+        if (!requestId) return;
+
         try {
-            await acceptFriendRequest(notification.friendRequestId?.id);
+            await acceptFriendRequest(requestId);
             toast.success("Friend request accepted!");
             onRead();
         } catch (error) {
@@ -196,9 +202,15 @@ export function NotificationItem({
     const handleRejectFriend = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!notification.friendRequestId) return;
-        console.log(notification);
+
+        const requestId = typeof notification.friendRequestId === 'string'
+            ? notification.friendRequestId
+            : notification.friendRequestId?.id;
+
+        if (!requestId) return;
+
         try {
-            await rejectFriendRequest(notification.friendRequestId?.id);
+            await rejectFriendRequest(requestId);
             toast.success("Friend request rejected");
             onDelete();
         } catch (error) {
