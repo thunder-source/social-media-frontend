@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,8 @@ import {
     Mail,
     X,
     Check,
-    XIcon
+    XIcon,
+    Loader2
 } from "lucide-react";
 import { Notification, NotificationType } from "@/types";
 import { cn } from "@/lib/utils";
@@ -155,6 +157,8 @@ export function NotificationItem({
 }: NotificationItemProps) {
     const router = useRouter();
     const { acceptFriendRequest, rejectFriendRequest } = useFriends();
+    const [isAccepting, setIsAccepting] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
 
     // Normalize notification type to handle backend/frontend format differences
     const normalizedType = normalizeNotificationType(notification.type);
@@ -182,7 +186,7 @@ export function NotificationItem({
 
     const handleAcceptFriend = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!notification.friendRequestId) return;
+        if (!notification.friendRequestId || isAccepting) return;
 
         const requestId = typeof notification.friendRequestId === 'string'
             ? notification.friendRequestId
@@ -190,18 +194,21 @@ export function NotificationItem({
 
         if (!requestId) return;
 
+        setIsAccepting(true);
         try {
             await acceptFriendRequest(requestId);
             toast.success("Friend request accepted!");
             onRead();
         } catch (error) {
             toast.error("Failed to accept friend request");
+        } finally {
+            setIsAccepting(false);
         }
     };
 
     const handleRejectFriend = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!notification.friendRequestId) return;
+        if (!notification.friendRequestId || isRejecting) return;
 
         const requestId = typeof notification.friendRequestId === 'string'
             ? notification.friendRequestId
@@ -209,12 +216,15 @@ export function NotificationItem({
 
         if (!requestId) return;
 
+        setIsRejecting(true);
         try {
             await rejectFriendRequest(requestId);
             toast.success("Friend request rejected");
             onDelete();
         } catch (error) {
             toast.error("Failed to reject friend request");
+        } finally {
+            setIsRejecting(false);
         }
     };
 
@@ -276,18 +286,38 @@ export function NotificationItem({
                                 size="sm"
                                 className="h-7 text-xs flex-1"
                                 onClick={handleAcceptFriend}
+                                disabled={isAccepting || isRejecting}
                             >
-                                <Check className="h-3 w-3 mr-1" />
-                                Accept
+                                {isAccepting ? (
+                                    <>
+                                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                        Accepting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check className="h-3 w-3 mr-1" />
+                                        Accept
+                                    </>
+                                )}
                             </Button>
                             <Button
                                 size="sm"
                                 variant="outline"
                                 className="h-7 text-xs flex-1"
                                 onClick={handleRejectFriend}
+                                disabled={isAccepting || isRejecting}
                             >
-                                <XIcon className="h-3 w-3 mr-1" />
-                                Reject
+                                {isRejecting ? (
+                                    <>
+                                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                        Rejecting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <XIcon className="h-3 w-3 mr-1" />
+                                        Reject
+                                    </>
+                                )}
                             </Button>
                         </div>
                     )}

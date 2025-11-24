@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useInView } from 'react-intersection-observer';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
@@ -25,10 +25,28 @@ export default function CreatePost() {
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showSlowUploadMessage, setShowSlowUploadMessage] = useState(false);
   const [media, setMedia] = useState<{ file: File; preview: string; type: 'image' | 'video' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fabPosition, setFabPosition] = useState<'left' | 'right'>('right');
   const { user, isLoading: isAuthLoaing } = useAuth();
+
+  // Timer to show slow upload message after 5 seconds
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (isLoading && media) {
+      timer = setTimeout(() => {
+        setShowSlowUploadMessage(true);
+      }, 5000);
+    } else {
+      setShowSlowUploadMessage(false);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isLoading, media]);
 
   // Intersection Observer to track visibility
   const { ref: createPostRef, inView } = useInView({
@@ -170,6 +188,17 @@ export default function CreatePost() {
               </div>
 
               <DialogFooter className="p-4 border-t border-border/50">
+                {showSlowUploadMessage && (
+                  <div className="w-full mb-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
+                      <span className="font-semibold">⏱️ Processing your media...</span>
+                      <br />
+                      <span className="text-xs mt-1 block">
+                        Our backend is deployed on Render with limited CPU. Video compression and image processing may take a bit longer than usual. Thank you for your patience!
+                      </span>
+                    </p>
+                  </div>
+                )}
                 <Button
                   className="w-full"
                   onClick={handleSubmit}
