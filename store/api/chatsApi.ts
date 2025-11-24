@@ -32,7 +32,7 @@ export const chatsApi = apiSlice.injectEndpoints({
       },
       providesTags: ['Chats'],
     }),
-    createChat: builder.mutation<Chat, { partnerId: string }>({
+    createChat: builder.mutation<Chat, { userId1: string; userId2: string }>({
       query: (body) => ({
         url: '/chats',
         method: 'POST',

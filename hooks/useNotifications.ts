@@ -31,12 +31,14 @@ import {
   sendSubscriptionToBackend,
 } from "@/lib/serviceWorker";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
 export function useNotifications() {
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
   const { socket } = useSocket();
   const {
     notifications,
@@ -47,10 +49,11 @@ export function useNotifications() {
   } = useSelector((state: RootState) => state.notifications);
 
   // RTK Query hooks
-  const { data: fetchedNotifications, isLoading, refetch } = useGetNotificationsQuery(
-    undefined,
-    { skip: !isAuthenticated }
-  );
+  const {
+    data: fetchedNotifications,
+    isLoading,
+    refetch,
+  } = useGetNotificationsQuery(undefined, { skip: !isAuthenticated });
   const [markAsReadMutation] = useMarkAsReadMutation();
   const [markAllAsReadMutation] = useMarkAllAsReadMutation();
   const [deleteNotificationMutation] = useDeleteNotificationMutation();
@@ -71,7 +74,7 @@ export function useNotifications() {
       try {
         // Register service worker
         const registration = await registerServiceWorker();
-        
+
         if (registration) {
           dispatch(setServiceWorkerStatus(true));
         }
@@ -80,18 +83,25 @@ export function useNotifications() {
         setTimeout(async () => {
           const permission = await requestPushPermission();
           dispatch(setPermissionStatus(permission === "granted"));
-          
+
           // Validate VAPID key format (simple regex for base64url)
-          const isValidVapidKey = VAPID_PUBLIC_KEY && 
-            VAPID_PUBLIC_KEY.length > 10 && 
+          const isValidVapidKey =
+            VAPID_PUBLIC_KEY &&
+            VAPID_PUBLIC_KEY.length > 10 &&
             /^[a-zA-Z0-9\-_]+$/.test(VAPID_PUBLIC_KEY);
 
           if (permission === "granted" && isValidVapidKey && registration) {
             try {
-              const subscription = await subscribeToPush(registration, VAPID_PUBLIC_KEY);
-              
+              const subscription = await subscribeToPush(
+                registration,
+                VAPID_PUBLIC_KEY
+              );
+
               if (subscription) {
-                const success = await sendSubscriptionToBackend(subscription, API_URL);
+                const success = await sendSubscriptionToBackend(
+                  subscription,
+                  API_URL
+                );
                 dispatch(setPushSubscriptionStatus(success));
               }
             } catch (error) {
@@ -123,11 +133,11 @@ export function useNotifications() {
       }
 
       // Show toast
-      const config = getNotificationConfig(notification);
-      toast.info(config.title, {
-        description: config.message,
-        duration: 4000,
-      });
+      // const config = getNotificationConfig(notification);
+      // toast.info(config.title, {
+      //   description: config.message,
+      //   duration: 4000,
+      // });
     };
 
     socket.on("notification", handleNewNotification);
@@ -138,20 +148,22 @@ export function useNotifications() {
   }, [isAuthenticated, user?.id, hasPermission, dispatch, socket]);
 
   // Mark notification as read
-  const markAsRead = useCallback(async (notificationId: string) => {
-    try {
-      // Optimistic update
-      dispatch(markNotificationAsRead(notificationId));
+  const markAsRead = useCallback(
+    async (notificationId: string) => {
+      try {
+        // Optimistic update
+        dispatch(markNotificationAsRead(notificationId));
 
-      // Call API
-      await markAsReadMutation(notificationId).unwrap();
-
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error);
-      // Refetch to sync state
-      refetch();
-    }
-  }, [dispatch, markAsReadMutation, refetch, socket]);
+        // Call API
+        await markAsReadMutation(notificationId).unwrap();
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+        // Refetch to sync state
+        refetch();
+      }
+    },
+    [dispatch, markAsReadMutation, refetch, socket]
+  );
 
   // Mark all as read
   const markAllAsRead = useCallback(async () => {
@@ -172,20 +184,23 @@ export function useNotifications() {
   }, [dispatch, markAllAsReadMutation, refetch]);
 
   // Delete notification
-  const deleteNotification = useCallback(async (notificationId: string) => {
-    try {
-      // Optimistic update
-      dispatch(deleteNotificationAction(notificationId));
+  const deleteNotification = useCallback(
+    async (notificationId: string) => {
+      try {
+        // Optimistic update
+        dispatch(deleteNotificationAction(notificationId));
 
-      // Call API
-      await deleteNotificationMutation(notificationId).unwrap();
-    } catch (error) {
-      console.error("Failed to delete notification:", error);
-      toast.error("Failed to delete notification");
-      // Refetch to sync state
-      refetch();
-    }
-  }, [dispatch, deleteNotificationMutation, refetch]);
+        // Call API
+        await deleteNotificationMutation(notificationId).unwrap();
+      } catch (error) {
+        console.error("Failed to delete notification:", error);
+        toast.error("Failed to delete notification");
+        // Refetch to sync state
+        refetch();
+      }
+    },
+    [dispatch, deleteNotificationMutation, refetch]
+  );
 
   // Request notification permission
   const requestNotificationPermission = useCallback(async () => {
@@ -234,7 +249,10 @@ function showBrowserNotification(notification: Notification) {
 
   const browserNotification = new Notification(title, {
     body,
-    icon: notification.actor?.photo || notification.actor?.image || "/default-avatar.png",
+    icon:
+      notification.actor?.photo ||
+      notification.actor?.image ||
+      "/default-avatar.png",
     badge: "/logo.png",
     tag: notification.id,
     requireInteraction: false,
@@ -257,8 +275,11 @@ function showBrowserNotification(notification: Notification) {
 // Helper function to get notification config
 function getNotificationConfig(notification: Notification) {
   const actorName = notification.actor?.name || "Someone";
-  
-  const configs: Record<string, { title: string; message: string; route: string | null }> = {
+
+  const configs: Record<
+    string,
+    { title: string; message: string; route: string | null }
+  > = {
     LIKE: {
       title: actorName,
       message: "liked your post",
@@ -296,9 +317,11 @@ function getNotificationConfig(notification: Notification) {
     },
   };
 
-  return configs[notification.type] || {
-    title: actorName,
-    message: "sent you a notification",
-    route: null,
-  };
+  return (
+    configs[notification.type] || {
+      title: actorName,
+      message: "sent you a notification",
+      route: null,
+    }
+  );
 }

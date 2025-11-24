@@ -169,15 +169,15 @@ export function NotificationItem({
     const Icon = config.icon;
 
     const handleClick = () => {
-        if (!notification.read) {
+        if (normalizedType !== 'FRIEND_REQUEST' && !notification.read) {
             onRead();
         }
 
-        const route = config.getRoute(notification);
-        if (route) {
-            router.push(route);
-            onClick?.();
-        }
+        // const route = config.getRoute(notification);
+        // if (route) {
+        //     router.push(route);
+        //     onClick?.();
+        // }
     };
 
     const handleAcceptFriend = async (e: React.MouseEvent) => {
@@ -185,7 +185,7 @@ export function NotificationItem({
         if (!notification.friendRequestId) return;
 
         try {
-            await acceptFriendRequest(notification.friendRequestId);
+            await acceptFriendRequest(notification.friendRequestId?.id);
             toast.success("Friend request accepted!");
             onRead();
         } catch (error) {
@@ -196,9 +196,9 @@ export function NotificationItem({
     const handleRejectFriend = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!notification.friendRequestId) return;
-
+        console.log(notification);
         try {
-            await rejectFriendRequest(notification.friendRequestId);
+            await rejectFriendRequest(notification.friendRequestId?.id);
             toast.success("Friend request rejected");
             onDelete();
         } catch (error) {

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useChat } from "@/hooks/useChat";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,6 +44,33 @@ export default function ChatPage() {
   const { friends } = useFriends();
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Handle userId from URL query param
+  useEffect(() => {
+    const userIdParam = searchParams.get("userId");
+
+    if (userIdParam && !isLoading && chats) {
+      // Check if we already have a chat with this user
+      const existingChat = chats.find(chat =>
+        chat.participants.some(p => p.id === userIdParam)
+      );
+
+      if (existingChat) {
+        selectChat(existingChat.id);
+      } else {
+        // Create new chat
+        createChat(userIdParam).catch(err => {
+          console.error("Failed to create chat from URL param:", err);
+        });
+      }
+
+      // Clear the query param to avoid re-triggering
+      router.replace("/chat");
+    }
+  }, [searchParams, chats, isLoading, selectChat, createChat, router]);
 
   // Filter chats based on search
   const filteredChats = chats.filter((chat) => {

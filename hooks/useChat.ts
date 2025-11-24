@@ -252,8 +252,16 @@ export const useChat = (): UseChatReturn => {
 
   // Create chat
   const createChat = useCallback(async (partnerId: string) => {
+    if (!user?.id) {
+      toast.error("You must be logged in to create a chat");
+      throw new Error("User not logged in");
+    }
+
     try {
-      const chat = await createChatMutation({ partnerId }).unwrap();
+      const chat = await createChatMutation({ 
+        userId1: user.id,
+        userId2: partnerId 
+      }).unwrap();
       // Refetch chats to include the new one
       await refetchChats();
       // Select the new chat
@@ -264,7 +272,7 @@ export const useChat = (): UseChatReturn => {
       toast.error("Failed to create chat");
       throw error;
     }
-  }, [createChatMutation, refetchChats, selectChat]);
+  }, [createChatMutation, refetchChats, selectChat, user?.id]);
 
   // Set up socket event listeners
   useEffect(() => {

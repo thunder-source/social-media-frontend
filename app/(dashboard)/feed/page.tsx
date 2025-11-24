@@ -70,7 +70,7 @@ export default function FeedPage() {
   return (
     <div
       ref={containerRef}
-      className="max-w-2xl mx-auto py-8 px-4 relative"
+      className="max-w-2xl w-full mx-auto py-8 px-4 relative"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
