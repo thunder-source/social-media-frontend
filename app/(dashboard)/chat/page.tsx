@@ -22,6 +22,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Chat } from "@/types";
+import { ChatListSkeleton } from "@/components/skeletons/ChatListSkeleton";
 
 export default function ChatPage() {
   const {
@@ -35,8 +36,9 @@ export default function ChatPage() {
     loadMoreMessages,
     selectChat,
     createChat,
+    isLoading,
+    clearChat,
   } = useChat();
-
   const { user, onlineUsers } = useSelector((state: RootState) => state.auth);
   const { friends } = useFriends();
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,7 +119,12 @@ export default function ChatPage() {
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       {/* Sidebar - Chat List */}
-      <div className="w-full max-w-sm border-r bg-card/50 flex flex-col">
+      <div
+        className={cn(
+          "w-full md:w-80 lg:w-96 border-r bg-card/50 flex flex-col transition-all duration-300",
+          currentChat ? "hidden md:flex" : "flex"
+        )}
+      >
         {/* Header */}
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
@@ -190,93 +197,102 @@ export default function ChatPage() {
 
         {/* Chat List */}
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            <AnimatePresence>
-              {filteredChats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center px-4">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    {searchQuery ? "No chats found" : "No conversations yet"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {!searchQuery && "Start a new conversation with your friends"}
-                  </p>
-                </div>
-              ) : (
-                filteredChats.map((chat) => {
-                  const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
-                  const isOnline = otherParticipant
-                    ? !!onlineUsers[otherParticipant.id]
-                    : false;
-                  const isSelected = currentChat?.id === chat.id;
+          {isLoading ? (
+            <ChatListSkeleton />
+          ) : (
+            <div className="p-2 space-y-1">
+              <AnimatePresence>
+                {filteredChats.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      {searchQuery ? "No chats found" : "No conversations yet"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {!searchQuery && "Start a new conversation with your friends"}
+                    </p>
+                  </div>
+                ) : (
+                  filteredChats.map((chat) => {
+                    const otherParticipant = chat.participants.find((p) => p.id !== user?.id);
+                    const isOnline = otherParticipant
+                      ? !!onlineUsers[otherParticipant.id]
+                      : false;
+                    const isSelected = currentChat?.id === chat.id;
 
-                  return (
-                    <motion.button
-                      key={chat.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      onClick={() => selectChat(chat.id)}
-                      className={cn(
-                        "w-full p-3 rounded-lg transition-all duration-200",
-                        "flex items-center gap-3 hover:bg-accent/50",
-                        isSelected && "bg-accent"
-                      )}
-                    >
-                      {/* Avatar with online status */}
-                      <div className="relative shrink-0">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={otherParticipant?.image || otherParticipant?.photo} alt={otherParticipant?.name} />
-                          <AvatarFallback>
-                            {otherParticipant?.name?.charAt(0).toUpperCase() || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div
-                          className={cn(
-                            "absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background",
-                            isOnline ? "bg-green-500" : "bg-gray-400"
-                          )}
-                        />
-                      </div>
+                    return (
+                      <motion.button
+                        key={chat.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        onClick={() => selectChat(chat.id)}
+                        className={cn(
+                          "w-full p-3 rounded-lg transition-all duration-200",
+                          "flex items-center gap-3 hover:bg-accent/50",
+                          isSelected && "bg-accent"
+                        )}
+                      >
+                        {/* Avatar with online status */}
+                        <div className="relative shrink-0">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={otherParticipant?.image || otherParticipant?.photo} alt={otherParticipant?.name} />
+                            <AvatarFallback>
+                              {otherParticipant?.name?.charAt(0).toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div
+                            className={cn(
+                              "absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background",
+                              isOnline ? "bg-green-500" : "bg-gray-400"
+                            )}
+                          />
+                        </div>
 
-                      {/* Chat info */}
-                      <div className="flex-1 min-w-0 text-left">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-sm truncate">
-                            {otherParticipant?.name}
-                          </span>
-                          {chat.lastMessage && (
-                            <span className="text-xs text-muted-foreground ml-2 shrink-0">
-                              {formatChatTime(chat.lastMessage.createdAt)}
+                        {/* Chat info */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold text-sm truncate">
+                              {otherParticipant?.name}
                             </span>
-                          )}
-                        </div>
+                            {chat.lastMessage && (
+                              <span className="text-xs text-muted-foreground ml-2 shrink-0">
+                                {formatChatTime(chat.lastMessage.createdAt)}
+                              </span>
+                            )}
+                          </div>
 
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm text-muted-foreground truncate">
-                            {chat.lastMessage?.content || "No messages yet"}
-                          </p>
-                          {chat.unreadCount > 0 && (
-                            <Badge
-                              variant="default"
-                              className="h-5 min-w-5 px-1.5 rounded-full text-xs shrink-0"
-                            >
-                              {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
-                            </Badge>
-                          )}
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm text-muted-foreground truncate">
+                              {chat.lastMessage?.content || "No messages yet"}
+                            </p>
+                            {chat.unreadCount > 0 && (
+                              <Badge
+                                variant="default"
+                                className="h-5 min-w-5 px-1.5 rounded-full text-xs shrink-0"
+                              >
+                                {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.button>
-                  );
-                })
-              )}
-            </AnimatePresence>
-          </div>
+                      </motion.button>
+                    );
+                  })
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </ScrollArea>
       </div>
 
       {/* Chat Window */}
-      <div className="flex-1">
+      <div
+        className={cn(
+          "flex-1 transition-all duration-300",
+          !currentChat ? "hidden md:flex" : "flex"
+        )}
+      >
         {currentChat ? (
           <ChatWindow
             chat={currentChat}
@@ -286,9 +302,10 @@ export default function ChatPage() {
             onTypingStart={handleTypingStart}
             onTypingStop={handleTypingStop}
             onLoadMore={handleLoadMore}
+            onBack={clearChat}
           />
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center px-4">
+          <div className="h-full flex-1 flex flex-col items-center justify-center text-center px-4">
             <div className="bg-primary/10 p-6 rounded-full mb-4">
               <MessageSquare className="h-12 w-12 text-primary" />
             </div>

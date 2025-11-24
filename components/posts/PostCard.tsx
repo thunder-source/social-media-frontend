@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Loader2 } from 'lucide-react';
 import { Post } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,7 @@ export default function PostCard({ post, onLike, onComment, onUpdate, onDelete }
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCommenting, setIsCommenting] = useState(false);
 
   // Get current user from auth state
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
@@ -107,11 +108,14 @@ export default function PostCard({ post, onLike, onComment, onUpdate, onDelete }
     e.preventDefault();
     if (!commentText.trim()) return;
 
+    setIsCommenting(true);
     try {
       await onComment?.(post.id, commentText);
       setCommentText('');
     } catch (error) {
       console.error('Failed to add comment:', error);
+    } finally {
+      setIsCommenting(false);
     }
   };
 
@@ -324,9 +328,13 @@ export default function PostCard({ post, onLike, onComment, onUpdate, onDelete }
                       size="icon"
                       variant="ghost"
                       className="absolute right-0 top-0 h-9 w-9 text-primary hover:text-primary/80"
-                      disabled={!commentText.trim()}
+                      disabled={!commentText.trim() || isCommenting}
                     >
-                      <Send className="h-4 w-4" />
+                      {isCommenting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </form>

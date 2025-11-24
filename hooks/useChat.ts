@@ -27,6 +27,8 @@ interface UseChatReturn {
   loadMoreMessages: (chatId: string, offset: number) => Promise<void>;
   selectChat: (chatId: string) => void;
   createChat: (partnerId: string) => Promise<Chat>;
+  isLoading: boolean;
+  clearChat: () => void;
 }
 
 export const useChat = (): UseChatReturn => {
@@ -36,7 +38,7 @@ export const useChat = (): UseChatReturn => {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
   // RTK Query hooks
-  const { data: chats = [], refetch: refetchChats } = useGetChatsQuery(undefined, {
+  const { data: chats = [], refetch: refetchChats, isLoading } = useGetChatsQuery(undefined, {
     skip: !user,
   });
 
@@ -243,6 +245,11 @@ export const useChat = (): UseChatReturn => {
     }
   }, [chats, triggerGetMessages]);
 
+  // Clear current chat
+  const clearChat = useCallback(() => {
+    setCurrentChat(null);
+  }, []);
+
   // Create chat
   const createChat = useCallback(async (partnerId: string) => {
     try {
@@ -302,5 +309,7 @@ export const useChat = (): UseChatReturn => {
     loadMoreMessages,
     selectChat,
     createChat,
+    isLoading,
+    clearChat,
   };
 };

@@ -8,7 +8,7 @@ import { MessageInput } from "./MessageInput";
 import { TypingIndicator } from "./TypingIndicator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { X, Phone, Video, MoreVertical } from "lucide-react";
+import { X, Phone, Video, MoreVertical, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence } from "framer-motion";
 import type { Chat, Message } from "@/types";
@@ -23,6 +23,7 @@ interface ChatWindowProps {
   onTypingStop: () => void;
   onLoadMore?: () => void;
   onClose?: () => void;
+  onBack?: () => void;
   isModal?: boolean;
   className?: string;
 }
@@ -36,6 +37,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onTypingStop,
   onLoadMore,
   onClose,
+  onBack,
   isModal = false,
   className,
 }) => {
@@ -77,14 +79,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-background",
+        "flex flex-1 flex-col h-full bg-background",
         isModal && "rounded-lg shadow-2xl border",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-card/50 backdrop-blur">
+      <div className="flex items-center justify-between px-3 md:px-4 py-3 border-b bg-card/50 backdrop-blur">
         <div className="flex items-center gap-3">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden -ml-2"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
           <div className="relative">
             <Avatar className="h-10 w-10">
               <AvatarImage src={otherParticipant?.image} alt={otherParticipant?.name} />

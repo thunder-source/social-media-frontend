@@ -90,7 +90,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
     return (
         <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-end gap-2 p-4">
+            <div className="flex items-end gap-2 p-2 md:p-4">
                 <Textarea
                     ref={textareaRef}
                     value={message}
